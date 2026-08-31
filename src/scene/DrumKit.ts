@@ -29,6 +29,8 @@ const HIT_PADDING = 0.09; // metres added around each element for aiming
 const GLOW_LAMBDA = 7.7; // hover glow response
 const FLASH_LAMBDA = 6.3; // stroke flash decay
 const KICK_FRONT_OFFSET = 0.02; // the batter head sits this far inside the hoop
+const TILTER_LENGTH = 0.11; // chrome rod through the cymbal's centre hole
+const STAND_DROP = 0.25; // cymbal stand tube ends this far below the cymbal centre
 
 type Reactive = MeshStandardMaterial | MeshPhysicalMaterial;
 
@@ -301,10 +303,19 @@ export class DrumKit {
       new CylinderGeometry(0.02, 0.02, 0.01, 16).translate(0, -0.006, 0),
     ]);
     group.add(new Mesh(nut, this.materials.felt));
-    group.add(new Mesh(new CylinderGeometry(0.005, 0.005, 0.11, 8), this.materials.chrome));
-    group.rotation.x = placement.tilt ?? 0.5;
+    group.add(
+      new Mesh(new CylinderGeometry(0.005, 0.005, TILTER_LENGTH, 8), this.materials.chrome),
+    );
+    const tilt = placement.tilt ?? 0.5;
+    group.rotation.x = tilt;
 
-    this.addStand(position.x * 0.92, position.z + 0.14, position.y - 0.07, 0.42, position);
+    // straight stand under the centre, ending well below the lowest point of the tilted
+    // cymbal, then a short neck up to the tilter along the cymbal's axis
+    const tubeTop = new Vector3(position.x, position.y - STAND_DROP, position.z);
+    const normal = new Vector3(0, 1, 0).applyAxisAngle(new Vector3(1, 0, 0), tilt);
+    const tilterBase = position.clone().addScaledVector(normal, -TILTER_LENGTH / 2);
+    this.addStand(position.x, position.z, position.y - STAND_DROP, 0.42);
+    this.addStatic(cylinderBetween(tubeTop, tilterBase, 0.008), this.materials.chrome);
     return [material];
   }
 
@@ -324,19 +335,18 @@ export class DrumKit {
     group.add(new Mesh(clutch, this.materials.chrome));
     group.rotation.x = 0.14;
 
-    this.addStand(position.x, position.z, position.y - 0.05, 0.4, undefined, 0.005, 0.2);
+    this.addStand(position.x, position.z, position.y - 0.05, 0.4, 0.005, 0.2);
     return [material];
   }
 
   /* ---------- hardware helpers ---------- */
 
-  /** Tripod stand: tube, three legs, rubber feet; an optional boom joins the tube to `to`. */
+  /** Tripod stand: tube, three legs, rubber feet. */
   private addStand(
     x: number,
     z: number,
     height: number,
     spread: number,
-    to?: Vector3,
     rodRadius = 0.011,
     rodExtra = 0,
   ): void {
@@ -356,10 +366,6 @@ export class DrumKit {
       parts.push(cylinderBetween(new Vector3(x, 0.3, z), foot, 0.006));
       feet.push(new CylinderGeometry(0.012, 0.014, 0.024, 8).translate(foot.x, 0.012, foot.z));
     }
-    if (to)
-      parts.push(
-        cylinderBetween(new Vector3(x, height, z), new Vector3(to.x, to.y - 0.06, to.z), 0.008),
-      );
     this.addStatic(merge(parts), this.materials.chrome);
     this.addStatic(merge(feet), this.materials.rubber);
   }

@@ -27,7 +27,7 @@ describe('gaze', () => {
       [0.3, -0.2],
       [-0.9, 0.4],
       [0.05, 0.05],
-    ]) {
+    ] as const) {
       const back = pointerFromGaze(gazeFromPointer(nx, ny));
       expect(back.nx).toBeCloseTo(nx, 6);
       expect(back.ny).toBeCloseTo(ny, 6);
