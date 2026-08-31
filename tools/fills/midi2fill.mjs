@@ -72,6 +72,7 @@ if (division & 0x8000) throw new Error('SMPTE time not supported');
 const tempos = [{ tick: 0, usPerQuarter: 500000 }];
 const notes = [];
 const unmapped = new Map();
+const skippedChannels = new Set();
 for (let trk = 0; trk < ntrks; trk++) {
   if (data.toString('latin1', pos, pos + 4) !== 'MTrk') throw new Error('bad track header');
   pos += 4;
@@ -101,9 +102,14 @@ for (let trk = 0; trk < ntrks; trk++) {
       const d1 = u8();
       const d2 = kind === 0xc0 || kind === 0xd0 ? 0 : u8();
       if (kind === 0x90 && d2 > 0) {
-        const key = GM.get(d1);
-        if (key) notes.push({ tick, key, velocity: d2 / 127 });
-        else unmapped.set(d1, (unmapped.get(d1) ?? 0) + 1);
+        // GM percussion lives on channel 10 (0-indexed 9); anything else is
+        // another instrument (guitar, bass...) and must not become a drum
+        if ((b & 0x0f) !== 9) skippedChannels.add((b & 0x0f) + 1);
+        else {
+          const key = GM.get(d1);
+          if (key) notes.push({ tick, key, velocity: d2 / 127 });
+          else unmapped.set(d1, (unmapped.get(d1) ?? 0) + 1);
+        }
       }
     }
   }
@@ -134,6 +140,8 @@ if (hits.length === 0) {
   console.error('no mapped drum notes found');
   process.exit(1);
 }
+if (skippedChannels.size > 0)
+  console.error(`! non-drum channels ignored: ${[...skippedChannels].join(', ')}`);
 for (const [pitch, count] of unmapped)
   console.error(`! unmapped GM note ${String(pitch)} (x${String(count)}) ignored`);
 const lastT = hits[hits.length - 1].t;
