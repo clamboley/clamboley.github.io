@@ -8,4 +8,6 @@ export const site = {
     'Assieds-toi derrière la batterie : chaque fût et chaque cymbale mène vers une facette de mon travail.',
   /** Canonical URL of the deployed site (Open Graph). */
   url: 'https://clamboley.github.io/vitrine/',
+  /** Looping crowd bed, relative to `public/`; level is a gain under the drums. */
+  ambience: { file: 'audio/crowd-ambience.mp3', level: 0.16 },
 } as const;

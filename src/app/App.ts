@@ -3,6 +3,7 @@ import { AudioEngine } from '../audio/AudioEngine.ts';
 import { fillDuration } from '../audio/fills.ts';
 import { LookInput } from '../input/LookInput.ts';
 import { KIT, KIT_BY_KEY } from '../kit.config.ts';
+import { site } from '../site.config.ts';
 import type { KitKey } from '../kit.types.ts';
 import { createRenderer } from '../scene/createRenderer.ts';
 import { Crowd } from '../scene/Crowd.ts';
@@ -20,6 +21,13 @@ import { StateMachine, type State } from './StateMachine.ts';
 const BACKGROUND = 0x05040a;
 const MAX_FRAME_DT = 0.05;
 const CENTER = new Vector2(0, 0);
+/** Events that count as a user activation for audio playback. */
+const GESTURES = ['pointerdown', 'mousedown', 'touchstart', 'keydown', 'click'] as const;
+
+/** Public asset path honouring Vite's `base` (sub-path deployments). */
+function withBase(path: string): string {
+  return `${import.meta.env.BASE_URL}${path}`;
+}
 
 interface ScheduledHit {
   at: number;
@@ -96,6 +104,7 @@ export class App {
   start(): void {
     this.resize();
     window.addEventListener('resize', this.resize);
+    for (const type of GESTURES) window.addEventListener(type, this.onFirstGesture);
     window.addEventListener('click', this.onClick);
     this.frame(performance.now());
   }
@@ -103,6 +112,7 @@ export class App {
   dispose(): void {
     cancelAnimationFrame(this.frameHandle);
     window.removeEventListener('resize', this.resize);
+    for (const type of GESTURES) window.removeEventListener(type, this.onFirstGesture);
     window.removeEventListener('click', this.onClick);
     this.look.dispose();
     this.renderer.dispose();
@@ -131,6 +141,16 @@ export class App {
   returnToStage(): void {
     this.fsm.reset();
   }
+
+  /** Browsers only let audio start from a gesture: the first one wakes the crowd. */
+  private readonly onFirstGesture = (): void => {
+    this.audio.unlock();
+    void this.audio
+      .startAmbience(withBase(site.ambience.file), site.ambience.level)
+      .catch((error: unknown) => {
+        console.warn('Crowd ambience unavailable', error);
+      });
+  };
 
   private readonly onClick = (): void => {
     const { state } = this.fsm;

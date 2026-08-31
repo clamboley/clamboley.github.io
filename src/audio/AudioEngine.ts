@@ -13,6 +13,14 @@ interface Graph {
   master: GainNode;
 }
 
+interface Ambience {
+  gain: GainNode;
+  level: number;
+}
+
+/** Crowd loop fade-in, seconds. */
+const AMBIENCE_FADE = 2.5;
+
 /**
  * Owns the AudioContext (created on the first user gesture, as browsers
  * require) and schedules fills on the audio clock, which is the time
@@ -20,6 +28,7 @@ interface Graph {
  */
 export class AudioEngine {
   private graph: Graph | null = null;
+  private ambience: Ambience | null = null;
   private readonly samples = new Map<string, AudioBuffer>();
 
   /** Current time on the audio clock (0 until unlocked). */
@@ -99,6 +108,42 @@ export class AudioEngine {
 
   cheer(at: number): void {
     this.requireGraph().synth.cheer(at);
+    this.swellAmbience(at);
+  }
+
+  /**
+   * Starts the looping crowd bed, quietly, under everything else. Idempotent;
+   * must run after `unlock()` (first user gesture).
+   */
+  async startAmbience(url: string, level: number): Promise<void> {
+    if (this.ambience) return;
+    const graph = this.requireGraph();
+    const gain = graph.ctx.createGain();
+    gain.gain.value = 0;
+    gain.connect(graph.master);
+    this.ambience = { gain, level };
+
+    await this.preload(url);
+    const buffer = this.samples.get(url);
+    if (!buffer) return;
+    const source = graph.ctx.createBufferSource();
+    source.buffer = buffer;
+    source.loop = true;
+    source.connect(gain);
+    const now = graph.ctx.currentTime;
+    source.start(now, Math.random() * buffer.duration);
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(level, now + AMBIENCE_FADE);
+  }
+
+  /** The crowd reacts to the fill, then settles back. */
+  private swellAmbience(at: number): void {
+    if (!this.ambience) return;
+    const { gain, level } = this.ambience;
+    gain.gain.cancelScheduledValues(at);
+    gain.gain.setValueAtTime(gain.gain.value, at);
+    gain.gain.linearRampToValueAtTime(level * 2.2, at + 0.6);
+    gain.gain.exponentialRampToValueAtTime(level, at + 4);
   }
 
   private requireGraph(): Graph {
