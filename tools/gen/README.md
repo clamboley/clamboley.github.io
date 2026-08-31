@@ -4,8 +4,9 @@ Image → GLB PBR avec [TRELLIS.2](https://github.com/microsoft/TRELLIS.2) (MIT)
 
 - Poids (partage CephFS, `noexec`) : `$MODELS_DIR/3D/{TRELLIS.2-4B,dinov3-vitl16-pretrain-lvd1689m,BiRefNet}`.
 - Pipeline patché (chemins locaux, détourage MIT) : `$SHARE/pipeline/`.
-- Environnement : sur le **disque local du nœud** (`/home/$USER/vitrine-gen/env`, le partage est `noexec`),
-  d'où le `--gres=gpu:1` sur tous les jobs.
+- Environnement : construit dans le scratch local du job (`$WORKING_DIR`, créé par le prolog, effacé après),
+  empaqueté avec conda-pack sur le partage (`env.tar.gz` + `work.tar.zst`) et restauré par `activate.sh`
+  au début de chaque job (~2 min). Le partage est `noexec`, d'où ce détour.
 
 ```sh
 # 1. environnement (une fois par nœud, ~30-60 min) — depuis ce dossier :

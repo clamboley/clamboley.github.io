@@ -1,0 +1,8 @@
+# One prompt per line; "name | prompt". Lines starting with # are ignored.
+fan-arms-up | full body photo of a single concert-goer seen from the front, both arms raised high, cheering, dark t-shirt and jeans, studio lighting, plain white background, centered, sharp
+fan-phone | full body photo of a single concert-goer seen from the front, holding a smartphone up above the head with the screen glowing, dark hoodie, studio lighting, plain white background, centered, sharp
+fan-side | full body photo of a single concert-goer seen from the side, arms up clapping, dark jacket, studio lighting, plain white background, centered, sharp
+stand-section | a section of stadium stands packed with a cheering crowd at a night concert, tiers of seats, people with arms raised, magenta and blue stage light haze, seen from the stage, isolated on plain white background, 3d render style
+crowd-front-row | dense front row of a concert crowd at night seen from the stage, dozens of people with arms raised and phones glowing, dark silhouettes rim-lit by magenta and blue stage lights, isolated on plain white background
+stage-monitor | a black stage monitor wedge speaker, floor monitor, product photo, studio lighting, plain white background, centered
+truss-par | a short section of stage truss with four PAR can spotlights mounted, black steel, product photo, plain white background, centered

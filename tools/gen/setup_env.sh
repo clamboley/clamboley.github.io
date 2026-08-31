@@ -1,9 +1,10 @@
 #!/bin/bash
-# Builds the TRELLIS.2 environment on the node's local disk (the shared filesystem is noexec).
+# Builds the TRELLIS.2 environment in the job's local scratch (the shared filesystem is
+# noexec) and packs it to the share with conda-pack so later jobs restore it anywhere.
 # Mirrors TRELLIS.2/setup.sh: torch 2.6 + CUDA 12.4 toolkit (conda), flash-attn wheel, CUDA extensions.
 set -euo pipefail
 
-ROOT="${ROOT:-$HOME/vitrine-gen}"
+ROOT="${ROOT:-${WORKING_DIR:-$HOME}/vitrine-gen}"
 SHARE="${SHARE:-${SHARE:-$HOME/vitrine-gen}}"
 ENV="$ROOT/env"
 export TORCH_CUDA_ARCH_LIST="${TORCH_CUDA_ARCH_LIST:-8.0;9.0}"
@@ -21,12 +22,13 @@ export MAMBA_ROOT_PREFIX="$ROOT/mamba"
 
 if [ ! -x "$ENV/bin/python" ]; then
   log "conda env: python 3.10 + CUDA 12.4 toolkit"
-  "$MM" create -y -p "$ENV" -c conda-forge python=3.10 pip ninja git
+  "$MM" create -y -p "$ENV" -c conda-forge python=3.10 pip ninja git zstd
   "$MM" install -y -p "$ENV" -c nvidia/label/cuda-12.4.1 cuda-toolkit
 fi
 export CUDA_HOME="$ENV"
 export PATH="$ENV/bin:$PATH"
 export LD_LIBRARY_PATH="$ENV/lib:${LD_LIBRARY_PATH:-}"
+export TORCH_EXTENSIONS_DIR="$ROOT/torch_ext"; mkdir -p "$TORCH_EXTENSIONS_DIR"
 PIP="$ENV/bin/pip"
 PY="$ENV/bin/python"
 "$PY" --version; "$ENV/bin/nvcc" --version | tail -1
@@ -68,11 +70,17 @@ log "FlexGEMM"
 log "o-voxel"
 "$PIP" install -q "$ROOT/TRELLIS.2/o-voxel" --no-build-isolation
 
+log "diffusers (Z-Image reference images)"
+"$PIP" install -q "diffusers>=0.36" accelerate sentencepiece protobuf
+
+log "nvdiffrast JIT warm-up (cached in $TORCH_EXTENSIONS_DIR)"
+"$PY" -c "import torch, nvdiffrast.torch as dr; dr.RasterizeCudaContext(); print('nvdiffrast plugin built')"
+
 log "smoke test"
 cd "$ROOT/TRELLIS.2"
 "$PY" - <<'PYEOF'
 import importlib
-for m in ['torch', 'nvdiffrast.torch', 'cumesh', 'flexgemm', 'o_voxel', 'transformers', 'trellis2']:
+for m in ['torch', 'nvdiffrast.torch', 'cumesh', 'flex_gemm', 'o_voxel', 'transformers', 'trellis2']:
     try:
         importlib.import_module(m); print('ok  ', m)
     except Exception as e:
@@ -82,4 +90,12 @@ try:
 except Exception as e:
     print('warn flash_attn missing ->', e)
 PYEOF
-log "done: $ENV"
+log "packing: conda-pack (relocatable env) + work tarball (code, JIT cache)"
+"$PIP" install -q conda-pack
+"$ENV/bin/conda-pack" -p "$ENV" -o "$SHARE/env.tar.gz.part" --format tar.gz --compress-level 3 --n-threads -1 --force
+mv "$SHARE/env.tar.gz.part" "$SHARE/env.tar.gz"
+rm -rf "$ROOT/TRELLIS.2/.git"
+tar -C "$ROOT" --use-compress-program="$ENV/bin/zstd -T0 -3" -cf "$SHARE/work.tar.zst.part" TRELLIS.2 torch_ext
+mv "$SHARE/work.tar.zst.part" "$SHARE/work.tar.zst"
+ls -la "$SHARE/env.tar.gz" "$SHARE/work.tar.zst"
+log "done: packed to $SHARE"

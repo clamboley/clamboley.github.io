@@ -14,16 +14,10 @@
 #   sbatch --export=ALL,BATCH=smoke[,GEN_ARGS="--seed 3"] trellis2_generate.sbatch
 set -euo pipefail
 BATCH="${BATCH:?set BATCH=<folder under inputs/>}"
-ROOT="$HOME/vitrine-gen"
 SHARE="${SHARE:-$HOME/vitrine-gen}"
-ENV="$ROOT/env"
 
 echo "job=$SLURM_JOB_ID node=$(hostname) batch=$BATCH start=$(date)"
-export PATH="$ENV/bin:$PATH"
-export LD_LIBRARY_PATH="$ENV/lib:${LD_LIBRARY_PATH:-}"
-export CUDA_HOME="$ENV"
-export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTHONUNBUFFERED=1
-export TMPDIR="$ROOT/tmp"; mkdir -p "$TMPDIR"
+source "$SHARE/tools/activate.sh"
 export ATTN_BACKEND="${ATTN_BACKEND:-flash_attn}"
 cd "$ROOT/TRELLIS.2"
 "$ENV/bin/python" "$SHARE/tools/generate.py" \
