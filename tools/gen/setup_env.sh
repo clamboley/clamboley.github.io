@@ -10,6 +10,8 @@ ENV="$ROOT/env"
 export TORCH_CUDA_ARCH_LIST="${TORCH_CUDA_ARCH_LIST:-8.0;9.0}"
 export MAX_JOBS="${MAX_JOBS:-16}"
 export TMPDIR="$ROOT/tmp"; mkdir -p "$TMPDIR" "$ROOT/bin"
+# pip must cache on the same device as its build dir (cross-device rename otherwise)
+export PIP_CACHE_DIR="$ROOT/pipcache"; mkdir -p "$PIP_CACHE_DIR"
 
 log() { echo; echo "[$(date +%H:%M:%S)] $*"; }
 
