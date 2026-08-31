@@ -1,4 +1,13 @@
-import { FogExp2, Raycaster, Scene, Timer, Vector2, type WebGLRenderer } from 'three';
+import {
+  FogExp2,
+  MathUtils,
+  Raycaster,
+  Scene,
+  Timer,
+  Vector2,
+  Vector3,
+  type WebGLRenderer,
+} from 'three';
 import { assets } from '../assets.config.ts';
 import { AudioEngine } from '../audio/AudioEngine.ts';
 import { fillDuration } from '../audio/fills.ts';
@@ -236,9 +245,17 @@ export class App {
       const beat = 60 / 130;
       const times = [0, 1, 2, 3].map((i) => start + i * beat);
       this.audio.countIn(times);
-      this.sticks.countIn(times);
+      this.sticks.countIn(times, this.gazePoint());
       this.countEndsAt = start + 3 * beat + 0.15;
     });
+  }
+
+  /** A point at arm's length ahead of the eyes, where the count-in happens. */
+  private gazePoint(): Vector3 {
+    const direction = this.pov.camera.getWorldDirection(new Vector3());
+    const point = this.pov.camera.position.clone().addScaledVector(direction, 0.95);
+    point.y = MathUtils.clamp(point.y, 0.8, 1.15);
+    return point;
   }
 
   private readonly resize = (): void => {

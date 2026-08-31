@@ -1,14 +1,5 @@
-import {
-  CylinderGeometry,
-  Group,
-  MathUtils,
-  Mesh,
-  MeshStandardMaterial,
-  SphereGeometry,
-  Vector3,
-} from 'three';
+import { CylinderGeometry, Group, MathUtils, Mesh, MeshStandardMaterial, Vector3 } from 'three';
 import type { KitKey } from '../kit.types.ts';
-import { merge } from './geometry.ts';
 
 const LENGTH = 0.41; // metres, a 5A stick
 const LIFT = 0.17; // seconds between the start of the swing and the contact
@@ -40,6 +31,8 @@ interface Hand {
   anchor: Vector3;
   restTip: Vector3;
   strikes: Strike[];
+  /** Fixed pose (butt → tip), used while this stick is held still. */
+  hold?: { butt: Vector3; tip: Vector3 } | undefined;
 }
 
 /** Elements a hand naturally owns; everything else alternates. */
@@ -51,13 +44,11 @@ const PREFERRED: Partial<Record<KitKey, Side>> = {
 };
 
 function stickGroup(material: MeshStandardMaterial): Group {
-  const shaft = new CylinderGeometry(0.0052, 0.0078, LENGTH - 0.02, 12).translate(
-    0,
-    (LENGTH - 0.02) / 2,
-    0,
-  );
-  const tip = new SphereGeometry(0.0065, 12, 8).scale(1, 1.4, 1).translate(0, LENGTH - 0.012, 0);
-  const geometry = merge([shaft, tip]).rotateX(Math.PI / 2); // along +z, butt at the origin
+  // one tapered cylinder for the whole stick: a simple silhouette that reads
+  // well at arm's length without a separate tip mesh
+  const geometry = new CylinderGeometry(0.0045, 0.0078, LENGTH, 12, 1)
+    .translate(0, LENGTH / 2, 0)
+    .rotateX(Math.PI / 2); // along +z, butt at the origin
   const mesh = new Mesh(geometry, material);
   mesh.castShadow = true;
   const group = new Group();
@@ -73,9 +64,12 @@ function stickGroup(material: MeshStandardMaterial): Group {
 export class Sticks {
   readonly root = new Group();
 
+  // matte and fairly dark: an inch from the camera under the key light, glossy
+  // pale wood blows past the bloom threshold and washes the whole frame out
   private readonly material = new MeshStandardMaterial({
-    color: 0xd9c39a,
-    roughness: 0.55,
+    color: 0xc4a878,
+    roughness: 0.7,
+    envMapIntensity: 0.3,
     transparent: true,
     opacity: 0,
   });
@@ -116,20 +110,30 @@ export class Sticks {
     this.root.visible = false;
   }
 
-  /** Count-in: the sticks click against each other at each given time. */
-  countIn(times: readonly number[]): void {
-    const meetLeft = new Vector3(-0.02, 1.08, -0.46);
-    const meetRight = new Vector3(0.05, 1.12, -0.43);
-    for (const hand of this.hands) {
-      const point = hand.side === 'left' ? meetLeft : meetRight;
-      hand.strikes = times.map((at) => ({ at, key: 'snare', point }));
-    }
+  /**
+   * Count-in around `meet` (kept in the middle of the gaze): the left stick
+   * stands almost vertical, leaning right; the right stick strikes it.
+   */
+  countIn(times: readonly number[], meet: Vector3): void {
+    const left = this.hand('left');
+    left.strikes = [];
+    left.hold = {
+      butt: meet.clone().add(new Vector3(-0.1, -0.3, 0.03)),
+      tip: meet.clone().add(new Vector3(0.04, 0.18, -0.01)),
+    };
+    const right = this.hand('right');
+    const hit = meet.clone().add(new Vector3(0.015, 0.05, 0));
+    right.hold = undefined;
+    right.strikes = times.map((at) => ({ at, key: 'snare', point: hit }));
     this.show();
   }
 
   /** Assigns the strokes to the hands and starts playing them. */
   play(strikes: readonly Strike[]): void {
-    for (const hand of this.hands) hand.strikes = [];
+    for (const hand of this.hands) {
+      hand.strikes = [];
+      hand.hold = undefined;
+    }
     const last: Record<Side, number> = { left: -Infinity, right: -Infinity };
     let alternate: Side = 'right';
     for (const strike of [...strikes].sort((a, b) => a.at - b.at)) {
@@ -169,6 +173,10 @@ export class Sticks {
       return;
     }
     for (const hand of this.hands) {
+      if (hand.hold) {
+        this.poseFixed(hand, hand.hold.butt, hand.hold.tip);
+        continue;
+      }
       this.follow(hand, now);
       this.pose(hand, this.tip, this.reach);
     }
@@ -239,6 +247,12 @@ export class Sticks {
   private reboundAt(strike: Strike, now: number): void {
     const v = (now - strike.at) / REBOUND;
     this.tip.copy(strike.point).addScaledVector(UP, Math.sin(v * Math.PI * 0.5) * REBOUND_HEIGHT);
+  }
+
+  /** Places the stick exactly from butt to tip (held still). */
+  private poseFixed(hand: Hand, butt: Vector3, tip: Vector3): void {
+    hand.stick.position.copy(butt);
+    hand.stick.lookAt(tip);
   }
 
   /**
