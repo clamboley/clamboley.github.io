@@ -70,6 +70,7 @@ export class App {
   private fillEndsAt = 0;
   /** Audio time when the current count-in (sticks clicked in the air) ends. */
   private countEndsAt = 0;
+  private fillSamplesRequested = false;
   private frameHandle = 0;
 
   constructor({ container, hud, overlay, stayOnRedirect }: AppOptions) {
@@ -203,6 +204,7 @@ export class App {
 
     // lock input right away; the fill itself waits for a live audio clock
     this.audio.unlock();
+    this.preloadFillSamples();
     this.fillEndsAt = Infinity;
     this.fsm.trigger();
     this.sticks.show();
@@ -226,8 +228,22 @@ export class App {
   };
 
   /** Click on no target: four stick clicks, like counting a song in. */
+  /** Fetch and decode the fills' recordings once, on the first gesture. */
+  private preloadFillSamples(): void {
+    if (this.fillSamplesRequested) return;
+    this.fillSamplesRequested = true;
+    for (const element of KIT) {
+      const { sample } = element.fill;
+      if (sample === null) continue;
+      void this.audio.preload(sample).catch((error: unknown) => {
+        console.warn(`Fill sample ${sample} unavailable, will synthesize`, error);
+      });
+    }
+  }
+
   private countIn(): void {
     this.audio.unlock();
+    this.preloadFillSamples();
     if (this.audio.currentTime < this.countEndsAt) return;
     this.countEndsAt = Infinity; // ignore further empty clicks while we schedule
     const sample = withBase(site.countIn.sample);
