@@ -22,11 +22,11 @@ export const assets = {
     fan('fan-side-s2'),
   ],
   /** Rows nearer than this (metres from the stage edge) get the detailed model. */
-  crowdDetailDistance: 4,
+  crowdDetailDistance: 2.5,
   props: {
-    wedges: ['models/props/stage-monitor-s1.glb', 'models/props/stage-monitor-s2.glb'],
-    truss: 'models/props/truss-par-s1.glb',
+    wedges: ['models/props/stage-monitor-s1.lo.glb', 'models/props/stage-monitor-s2.lo.glb'],
+    truss: 'models/props/truss-par-s1.lo.glb',
   },
   /** Tiers of seats repeated in an arc behind the pit. */
-  venue: { stand: 'models/venue/stand-section-s1.glb' },
+  venue: { stand: 'models/venue/stand-section-s1.lo.glb' },
 } as const;
