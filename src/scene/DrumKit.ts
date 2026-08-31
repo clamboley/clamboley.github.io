@@ -333,7 +333,8 @@ export class DrumKit {
       new CylinderGeometry(0.018, 0.018, 0.008, 16).translate(0, 0.034, 0),
     ]);
     group.add(new Mesh(clutch, this.materials.chrome));
-    group.rotation.x = 0.14;
+    // level, so the stand's rod exits through the centre of both cymbals
+    group.rotation.x = 0;
 
     this.addStand(position.x, position.z, position.y - 0.05, 0.4, 0.005, 0.2);
     return [material];
