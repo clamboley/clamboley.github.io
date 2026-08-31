@@ -106,6 +106,14 @@ export class AudioEngine {
     return start;
   }
 
+  /** The count-in: a stick click at each of the given times. */
+  countIn(times: readonly number[]): void {
+    const graph = this.requireGraph();
+    times.forEach((at, i) => {
+      graph.synth.stick(at, i === times.length - 1 ? 1 : 0.85);
+    });
+  }
+
   cheer(at: number): void {
     this.requireGraph().synth.cheer(at);
     this.swellAmbience(at);

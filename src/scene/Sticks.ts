@@ -116,6 +116,17 @@ export class Sticks {
     this.root.visible = false;
   }
 
+  /** Count-in: the sticks click against each other at each given time. */
+  countIn(times: readonly number[]): void {
+    const meetLeft = new Vector3(-0.02, 1.08, -0.46);
+    const meetRight = new Vector3(0.05, 1.12, -0.43);
+    for (const hand of this.hands) {
+      const point = hand.side === 'left' ? meetLeft : meetRight;
+      hand.strikes = times.map((at) => ({ at, key: 'snare', point }));
+    }
+    this.show();
+  }
+
   /** Assigns the strokes to the hands and starts playing them. */
   play(strikes: readonly Strike[]): void {
     for (const hand of this.hands) hand.strikes = [];

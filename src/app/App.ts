@@ -68,6 +68,8 @@ export class App {
 
   private pendingHits: ScheduledHit[] = [];
   private fillEndsAt = 0;
+  /** Audio time when the current count-in (sticks clicked in the air) ends. */
+  private countEndsAt = 0;
   private frameHandle = 0;
 
   constructor({ container, hud, overlay, stayOnRedirect }: AppOptions) {
@@ -192,6 +194,10 @@ export class App {
 
   private readonly onClick = (): void => {
     const { state } = this.fsm;
+    if (state.name === 'idle') {
+      this.countIn();
+      return;
+    }
     if (state.name !== 'hover') return;
     const element = KIT_BY_KEY[state.target];
 
@@ -219,6 +225,22 @@ export class App {
     });
   };
 
+  /** Click on no target: four stick clicks, like counting a song in. */
+  private countIn(): void {
+    this.audio.unlock();
+    if (this.audio.currentTime < this.countEndsAt) return;
+    this.countEndsAt = Infinity; // ignore further empty clicks while we schedule
+    void this.audio.whenRunning().then(() => {
+      if (this.fsm.state.name === 'fill' || this.fsm.state.name === 'redirect') return;
+      const start = this.audio.currentTime + 0.12;
+      const beat = 60 / 130;
+      const times = [0, 1, 2, 3].map((i) => start + i * beat);
+      this.audio.countIn(times);
+      this.sticks.countIn(times);
+      this.countEndsAt = start + 3 * beat + 0.15;
+    });
+  }
+
   private readonly resize = (): void => {
     const { innerWidth, innerHeight } = window;
     this.renderer.setSize(innerWidth, innerHeight);
@@ -235,6 +257,15 @@ export class App {
     this.applyDueHits();
     if (this.fsm.state.name === 'fill' && this.audio.currentTime >= this.fillEndsAt) {
       this.fsm.fillDone();
+    }
+    if (
+      this.fsm.state.name !== 'fill' &&
+      this.countEndsAt !== Infinity &&
+      this.countEndsAt > 0 &&
+      this.audio.currentTime > this.countEndsAt + 0.55
+    ) {
+      this.sticks.hide();
+      this.countEndsAt = 0;
     }
 
     this.pov.update(dt, elapsed);

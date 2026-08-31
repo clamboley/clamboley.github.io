@@ -40,6 +40,21 @@ export class Synth {
     }
   }
 
+  /** Woody click of two sticks against each other (the count-in). */
+  stick(at: number, velocity: number): void {
+    const body = this.ctx.createOscillator();
+    body.type = 'triangle';
+    body.frequency.setValueAtTime(1350, at);
+    body.frequency.exponentialRampToValueAtTime(900, at + 0.02);
+    body.connect(this.envelope(at, 0.4 * velocity, 0.03));
+    body.start(at);
+    body.stop(at + 0.05);
+    const snap = this.noiseSource(at, 0.03);
+    const bp = this.filter('bandpass', 3200, 1.2);
+    snap.connect(bp);
+    bp.connect(this.envelope(at, 0.5 * velocity, 0.025));
+  }
+
   /** Short swell of low-passed noise, stands in for the crowd cheering. */
   cheer(at: number): void {
     const source = this.noiseSource(at, 2.4);
