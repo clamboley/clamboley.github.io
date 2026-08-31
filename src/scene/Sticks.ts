@@ -29,6 +29,8 @@ export interface Strike {
   key: KitKey;
   /** World point the tip lands on. */
   point: Vector3;
+  /** Sticking from the score, if any. */
+  hand?: 'left' | 'right';
 }
 
 type Side = 'left' | 'right';
@@ -203,14 +205,20 @@ export class Sticks {
       let j = i + 1;
       while (j < sorted.length && sorted[j]?.at === first.at) j++;
       const group = sorted.slice(i, j);
-      const leftmost = group.reduce((a, b) => (b.point.x < a.point.x ? b : a));
-      const rightmost = group.reduce((a, b) => (b.point.x > a.point.x ? b : a));
-      if (group.length >= 2 && leftmost !== rightmost) {
+      // an explicit sticking from the score wins; the rest is guessed
+      const free = group.filter((strike) => {
+        if (strike.hand === undefined) return true;
+        take(strike.hand, strike);
+        return false;
+      });
+      const leftmost = free.reduce((a, b) => (b.point.x < a.point.x ? b : a), free[0]);
+      const rightmost = free.reduce((a, b) => (b.point.x > a.point.x ? b : a), free[0]);
+      if (free.length >= 2 && leftmost && rightmost && leftmost !== rightmost) {
         // both hands at once: the left hand takes the leftmost drum, uncrossed
         take('left', leftmost);
         take('right', rightmost);
       } else {
-        for (const strike of group) single(strike);
+        for (const strike of free) single(strike);
       }
       i = j;
     }

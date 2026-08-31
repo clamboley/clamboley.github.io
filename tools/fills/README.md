@@ -40,6 +40,15 @@ de samples sont relatifs à `public/`, sans slash initial (résolus par rapport 
 la page). L'alignement WAV/MIDI suppose que les deux exports partent du même
 début de partition.
 
+## Doigté
+
+Le doigté ne voyage pas dans le MIDI : Corentin le donne en clair (une lettre
+par coup de baguette dans l'ordre, pied exclu ; `B` = les deux mains sur un
+accord, gauche sur le fût le plus à gauche) et Claude le passe au
+convertisseur : `--sticking RLRLRLR`. Sans doigté, les baguettes choisissent
+elles-mêmes (droite mène, caisse claire gauche, charley droite, accords non
+croisés).
+
 ## Correspondance General MIDI
 
 | GM             | Élément |

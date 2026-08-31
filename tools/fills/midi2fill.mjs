@@ -2,7 +2,7 @@
 /**
  * Converts a MuseScore drumset MIDI export into a Fill literal for
  * src/audio/songFills.ts. Usage:
- *   node tools/fills/midi2fill.mjs tools/fills/scores/floor.mid [samples/fills/floor.wav] [--tempo 150]
+ *   node tools/fills/midi2fill.mjs tools/fills/scores/floor.mid [samples/fills/floor.wav] [--tempo 150] [--sticking RLRR...]
  * Prints the TS snippet, plus warnings (unmapped notes, duration).
  */
 import { readFileSync } from 'node:fs';
@@ -41,6 +41,9 @@ const args = process.argv.slice(3);
 const tempoFlag = args.indexOf('--tempo');
 const forcedBpm = tempoFlag >= 0 ? Number(args[tempoFlag + 1]) : null;
 if (tempoFlag >= 0) args.splice(tempoFlag, 2);
+const stickingFlag = args.indexOf('--sticking');
+const sticking = stickingFlag >= 0 ? String(args[stickingFlag + 1]).toUpperCase() : null;
+if (stickingFlag >= 0) args.splice(stickingFlag, 2);
 const sample = args[0] ?? null;
 const data = readFileSync(path);
 
@@ -143,6 +146,37 @@ const hits = notes
   }))
   .sort((a, b) => a.t - b.t || a.key.localeCompare(b.key));
 
+// --sticking: one letter per stick stroke in time order (R, L; B = both hands on a
+// two-stroke chord, left hand on the leftmost drum). Foot strokes take no letter.
+if (sticking) {
+  const ORDER = { hihat: 0, crash: 1, snare: 2, tom1: 3, kick: 4, tom2: 5, floor: 6, ride: 7 };
+  const letters = sticking.replace(/[^RLB]/g, '').split('');
+  let used = 0;
+  for (let i = 0; i < hits.length;) {
+    let j = i + 1;
+    while (j < hits.length && hits[j].t === hits[i].t) j++;
+    const group = hits
+      .slice(i, j)
+      .filter((h) => !h.foot && h.key !== 'kick')
+      .sort((a, b) => ORDER[a.key] - ORDER[b.key]);
+    if (group.length === 2 && letters[used] === 'B') {
+      group[0].hand = 'left';
+      group[1].hand = 'right';
+      used++;
+    } else {
+      for (const h of group) {
+        const letter = letters[used++];
+        if (letter === 'R') h.hand = 'right';
+        else if (letter === 'L') h.hand = 'left';
+        else throw new Error(`sticking: expected R or L for ${h.key} at ${String(h.t)} s`);
+      }
+    }
+    i = j;
+  }
+  if (used !== letters.length)
+    console.error(`! sticking has ${String(letters.length)} letters, ${String(used)} used`);
+}
+
 if (hits.length === 0) {
   console.error('no mapped drum notes found');
   process.exit(1);
@@ -160,7 +194,7 @@ console.error(
 
 const lines = hits.map(
   (h) =>
-    `    { t: ${String(h.t)}, key: '${h.key}', velocity: ${String(h.velocity)}${h.foot ? ', foot: true' : ''} },`,
+    `    { t: ${String(h.t)}, key: '${h.key}', velocity: ${String(h.velocity)}${h.foot ? ', foot: true' : ''}${h.hand ? `, hand: '${h.hand}'` : ''} },`,
 );
 console.log(
   `{\n  sample: ${sample ? `'${sample}'` : 'null'},\n  hits: [\n${lines.join('\n')}\n  ],\n}`,

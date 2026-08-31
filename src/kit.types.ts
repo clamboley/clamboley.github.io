@@ -20,6 +20,8 @@ export interface FillHit {
   velocity: number;
   /** Played with the foot (pedal hi-hat): the sound plays, no stick strikes. */
   foot?: boolean;
+  /** Sticking from the score; without it the sticks pick a hand themselves. */
+  hand?: 'left' | 'right';
 }
 
 /**

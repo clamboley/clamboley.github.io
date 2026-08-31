@@ -222,7 +222,13 @@ export class App {
       for (const hit of element.fill.hits) {
         if (hit.foot === true) continue; // pedal hi-hat: the foot plays it
         const point = this.kit.strikePoint(hit.key);
-        if (point) strikes.push({ at: start + hit.t, key: hit.key, point });
+        if (point)
+          strikes.push({
+            at: start + hit.t,
+            key: hit.key,
+            point,
+            ...(hit.hand === undefined ? {} : { hand: hit.hand }),
+          });
       }
       this.sticks.play(strikes);
     });
