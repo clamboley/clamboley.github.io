@@ -3,7 +3,7 @@ import { KIT } from '../kit.config.ts';
 import { PITCH_MAX, PITCH_MIN, gazeFromPointer, gazeToward, pointerFromGaze } from './gaze.ts';
 
 /** Fraction of the half-screen beyond which aiming gets tiresome. */
-const COMFORT = 0.8;
+const COMFORT = 0.7;
 
 describe('gaze', () => {
   it('looks straight ahead, slightly down, from the centre of the screen', () => {

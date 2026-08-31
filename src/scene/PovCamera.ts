@@ -2,7 +2,7 @@ import { MathUtils, PerspectiveCamera } from 'three';
 import type { MotionPrefs } from '../util/motion.ts';
 import { BASE_PITCH, EYE, gazeFromPointer } from './gaze.ts';
 
-const LOOK_LAMBDA = 4.7; // how fast the gaze follows the mouse
+const LOOK_LAMBDA = 7; // how fast the gaze follows the mouse (≈ 140 ms response)
 const SHAKE_LAMBDA = 7.7;
 
 /** Seated first-person camera: bounded yaw/pitch, breathing bob, stroke shake. */

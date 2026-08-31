@@ -10,12 +10,13 @@ export const EYE = { x: 0, y: 1.35, z: 0.15 } as const;
 export const BASE_PITCH = -0.3;
 // the kit spans ~±50° of yaw and -45°…+10° of pitch from the throne: the edges of the
 // screen must reach the hi-hat, the floor tom and the crashes without hunting for them
-export const YAW_RANGE = 1.1;
-export const PITCH_RANGE = 0.62;
-export const PITCH_MIN = -0.95;
-export const PITCH_MAX = 0.32;
+export const YAW_RANGE = 1.25;
+export const PITCH_RANGE = 0.74;
+export const PITCH_MIN = -1.05;
+export const PITCH_MAX = 0.4;
 
-const EASE_EXPONENT = 0.85;
+/** Below 1: the gaze pulls ahead of the pointer away from the centre. */
+const EASE_EXPONENT = 0.75;
 
 export interface Gaze {
   /** Rotation around the vertical axis, radians, positive to the left. */
