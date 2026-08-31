@@ -9,8 +9,8 @@ Corentin écrit chaque fill dans MuseScore, Claude convertit et intègre.
   dans le MIDI et cale les baguettes).
 - Voix disponibles : grosse caisse, caisse claire, tom aigu, tom médium, floor,
   charleston, crash, ride. Le reste (cowbell, splash…) sera ignoré.
-- Le **dernier accent doit tomber sur l'élément cliqué** (règle du site ; la
-  grosse caisse, qui ne peut pas s'accentuer elle-même, finit sur la crash).
+- L'élément cliqué doit **apparaître dans son fill** ; où la phrase se termine
+  est un choix musical libre.
 - Viser **2,5 s maximum** de matière : la redirection part 0,45 s après la
   dernière frappe.
 - Les nuances comptent : elles deviennent les vélocités des frappes.
