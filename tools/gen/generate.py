@@ -84,18 +84,25 @@ def main() -> int:
         hdr = synthetic_envmap()
     envmap = EnvMap(torch.tensor(hdr, dtype=torch.float32, device='cuda'))
 
+    failures = 0
     for file in files:
         stem = file.stem
         print(f'\n=== {file.name}')
         t1 = time.time()
-        image = Image.open(file)
-        mesh = pipeline.run(
-            image,
-            seed=args.seed,
-            preprocess_image=not args.no_preprocess,
-            pipeline_type=args.resolution,
-        )[0]
-        mesh.simplify(16_777_216)
+        try:
+            image = Image.open(file)
+            mesh = pipeline.run(
+                image,
+                seed=args.seed,
+                preprocess_image=not args.no_preprocess,
+                pipeline_type=args.resolution,
+            )[0]
+            mesh.simplify(16_777_216)
+        except Exception as error:  # one bad image must not sink the batch
+            failures += 1
+            print(f'FAILED {file.name}: {error!r}')
+            torch.cuda.empty_cache()
+            continue
         t_gen = time.time() - t1
         print(f'generated in {t_gen:.0f}s')
 
@@ -135,7 +142,8 @@ def main() -> int:
         (out / f'{stem}.json').write_text(json.dumps(meta, indent=2))
         print(json.dumps(meta))
         torch.cuda.empty_cache()
-    return 0
+    print(f'\ndone: {len(files) - failures}/{len(files)} generated')
+    return 1 if failures == len(files) else 0
 
 
 if __name__ == '__main__':
