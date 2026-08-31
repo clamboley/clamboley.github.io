@@ -65,8 +65,12 @@ def main() -> int:
 
     envmap = None
     if args.envmap:
-        hdr = cv2.cvtColor(cv2.imread(args.envmap, cv2.IMREAD_UNCHANGED), cv2.COLOR_BGR2RGB)
-        envmap = EnvMap(torch.tensor(hdr, dtype=torch.float32, device='cuda'))
+        hdr = cv2.imread(args.envmap, cv2.IMREAD_UNCHANGED)
+        if hdr is None:  # e.g. OpenCV built without OpenEXR: previews use the default lighting
+            print('envmap unreadable, previews without it:', args.envmap)
+        else:
+            hdr = cv2.cvtColor(hdr, cv2.COLOR_BGR2RGB)[..., :3]
+            envmap = EnvMap(torch.tensor(hdr, dtype=torch.float32, device='cuda'))
 
     for file in files:
         stem = file.stem
@@ -83,11 +87,10 @@ def main() -> int:
         t_gen = time.time() - t1
         print(f'generated in {t_gen:.0f}s')
 
-        if envmap is not None:
-            try:
-                preview_sheet(mesh, envmap, out / f'{stem}.preview.png')
-            except Exception as error:  # preview must never block the export
-                print('preview failed:', error)
+        try:
+            preview_sheet(mesh, envmap, out / f'{stem}.preview.png')
+        except Exception as error:  # preview must never block the export
+            print('preview failed:', error)
 
         t2 = time.time()
         glb = o_voxel.postprocess.to_glb(
