@@ -1,0 +1,4 @@
+# Festival lighting towers, isolated on white so they cut out cleanly.
+tower-truss | a tall black aluminium truss lighting tower for an outdoor festival, square lattice mast with a bank of stage spotlights and moving heads mounted at the top, product photo, plain white background, centered, full height visible
+tower-delay | a festival delay tower: black scaffold tower with a platform at the top carrying a row of stage lights and a line array speaker, product photo, plain white background, centered, full height visible
+tower-followspot | a black truss tower with a follow spot and four PAR lights on a platform at the top, outdoor concert, product photo, plain white background, centered

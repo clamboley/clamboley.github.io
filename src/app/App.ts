@@ -132,6 +132,9 @@ export class App {
       .catch(report('Stage props'));
     void this.props.loadBarrier(withBase(props.barrier)).catch(report('Barrier'));
     void this.props.loadPa(withBase(props.lineArray), withBase(props.subs)).catch(report('PA'));
+    void this.rig
+      .load(withBase(props.truss), assets.tower && withBase(assets.tower))
+      .catch(report('Rig'));
   }
 
   start(): void {
