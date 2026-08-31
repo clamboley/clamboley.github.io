@@ -79,13 +79,13 @@ export class App {
     this.renderer = createRenderer();
     container.appendChild(this.renderer.domElement);
 
-    this.scene.fog = new FogExp2(BACKGROUND, 0.045);
+    this.scene.fog = new FogExp2(BACKGROUND, 0.03);
     this.scene.environment = createStageEnvironment(this.renderer);
     this.scene.environmentIntensity = 0.45;
     this.pov = new PovCamera(motion);
     this.kit = new DrumKit(KIT);
     this.crowd = new Crowd(coarsePointer ? 90 : 170, assets.crowdIndividualDepth, motion);
-    this.lights = new StageLights(motion);
+    this.lights = new StageLights(motion, this.venue.rig);
     this.scene.add(
       createStage(),
       this.kit.root,
@@ -128,7 +128,6 @@ export class App {
       .catch(report('Stage props'));
     void this.props.loadBarrier(withBase(props.barrier)).catch(report('Barrier'));
     void this.props.loadPa(withBase(props.lineArray), withBase(props.subs)).catch(report('PA'));
-    void this.venue.load(withBase(assets.venue.tiers)).catch(report('Venue'));
   }
 
   start(): void {
@@ -238,6 +237,7 @@ export class App {
     this.kit.update(dt, elapsed, hovered);
     this.crowd.update(dt, elapsed);
     this.lights.update(elapsed);
+    this.venue.update(elapsed);
     this.sticks.update(this.audio.currentTime, dt);
 
     this.post.render(dt);

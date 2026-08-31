@@ -60,11 +60,11 @@ export class Props {
     const [lineArray, subs] = await Promise.all([loadModel(lineArrayUrl), loadModel(subsUrl)]);
     for (const side of [-1, 1]) {
       const array = new Mesh(lineArray.geometry, lineArray.material);
-      array.scale.setScalar(3.6 / lineArray.size.y);
-      array.position.set(side * 6.2, 2.6, STAGE_FRONT + 0.8);
+      array.scale.setScalar(3.0 / lineArray.size.y);
+      array.position.set(side * 8.5, 3.2, STAGE_FRONT - 0.5);
       array.rotation.y = -side * 0.25;
       this.root.add(array);
-      this.root.add(place(subs, 1.3, side * 6, PIT_FLOOR, STAGE_FRONT - 0.2, -side * 0.15));
+      this.root.add(place(subs, 1.3, side * 8.2, PIT_FLOOR, STAGE_FRONT - 0.6, -side * 0.15));
     }
   }
 }

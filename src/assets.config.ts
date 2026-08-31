@@ -33,6 +33,4 @@ export const assets = {
     lineArray: 'models/props/line-array-s2.lo.glb',
     subs: 'models/props/sub-stack-s1.lo.glb',
   },
-  /** Stepped tiers repeated in arcs around the pit. */
-  venue: { tiers: 'models/venue/tiers-front-s1.lo.glb' },
 } as const;

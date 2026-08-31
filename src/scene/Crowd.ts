@@ -25,7 +25,8 @@ const BASE_ENERGY = 0.45;
 const ENERGY_LAMBDA = 0.6; // return to base energy
 const PIT_FLOOR = -0.8; // the audience stands below the stage
 const PIT_FRONT = -4; // z of the first row
-const PIT_DEPTH = 12;
+const PIT_DEPTH = 17; // to the foot of the stands
+const PIT_LIGHTS = 2600; // phones held up across the pit
 const BLOCK_WIDTH = 7; // metres covered by one generated block of thirty people
 const ARMS_SHARE = 0.28;
 const SWAP_LAMBDA = 2.5; // capsules → generated people cross-fade
@@ -122,14 +123,21 @@ export class Crowd {
     this.plain.userData.people = plainPeople;
     this.arms.userData.people = armsPeople;
 
-    const phoneCount = Math.floor(count * 0.28);
-    const positions = new Float32Array(phoneCount * 3);
-    for (let i = 0; i < phoneCount; i++) {
+    const near = Math.floor(count * 0.28);
+    const positions = new Float32Array((near + PIT_LIGHTS) * 3);
+    for (let i = 0; i < near; i++) {
       const person = this.people[Math.floor(random() * this.people.length)];
       if (!person) continue;
       positions[i * 3] = person.x + (random() - 0.5) * 0.3;
       positions[i * 3 + 1] = person.y + person.height * (0.92 + random() * 0.2);
       positions[i * 3 + 2] = person.z + 0.2;
+    }
+    for (let i = near; i < near + PIT_LIGHTS; i++) {
+      const z = PIT_FRONT - 1 - random() * (PIT_DEPTH - 1);
+      const halfWidth = 13 + (-z - PIT_FRONT) * 0.4; // the pit runs to the foot of the stands
+      positions[i * 3] = (random() - 0.5) * 2 * halfWidth;
+      positions[i * 3 + 1] = PIT_FLOOR + (-z - 4) * 0.04 + 1.7 + random() * 0.6;
+      positions[i * 3 + 2] = z;
     }
     const geometry = new BufferGeometry();
     geometry.setAttribute('position', new BufferAttribute(positions, 3));
@@ -151,13 +159,16 @@ export class Crowd {
     const models = await Promise.all(urls.map((url) => loadModel(url)));
     const random = seededRandom(7);
     let n = 0;
-    const first = PIT_FRONT - this.individualDepth - 1.5;
-    const last = PIT_FRONT - PIT_DEPTH - 8;
+    const first = PIT_FRONT - 1.5; // side blocks start level with the first rows
+    const last = PIT_FRONT - PIT_DEPTH + 1;
     for (let z = first; z > last; z -= 3.2) {
       const offset = (n % 2) * BLOCK_WIDTH * 0.5;
-      for (let x = -14 + offset; x <= 14; x += BLOCK_WIDTH * 0.85) {
+      const halfWidth = 14 + (-z - PIT_FRONT) * 0.4;
+      for (let x = -halfWidth + offset; x <= halfWidth; x += BLOCK_WIDTH * 0.85) {
         const model = models[n % models.length];
         if (!model) continue;
+        // the individual people own the middle of the first rows
+        if (z > PIT_FRONT - this.individualDepth - 1 && Math.abs(x) < 11) continue;
         const mesh = new Mesh(model.geometry, model.material);
         const scale = (BLOCK_WIDTH * (0.9 + random() * 0.2)) / model.size.x;
         mesh.scale.setScalar(scale);

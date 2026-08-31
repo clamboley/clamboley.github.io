@@ -1,6 +1,13 @@
 import { Group, HemisphereLight, PointLight, SpotLight, Vector3 } from 'three';
 import type { MotionPrefs } from '../util/motion.ts';
+import { seededRandom } from '../util/random.ts';
 import { Beam } from './Beams.ts';
+import type { Rig } from './Venue.ts';
+
+/** Colours of the rig, in the order they are dealt to the fixtures. */
+const RIG_PALETTE = [
+  0x2e6bff, 0xa040ff, 0xff2e9a, 0xffb340, 0x2e6bff, 0xff3a3a, 0x7a5cff, 0x2fb8ff,
+];
 
 const KIT_CENTRE = new Vector3(0, 0.85, -0.7);
 
@@ -27,7 +34,10 @@ export class StageLights {
   private readonly rims: Rim[] = [];
   private readonly sweeps: Sweep[] = [];
 
-  constructor(private readonly motion: MotionPrefs) {
+  constructor(
+    private readonly motion: MotionPrefs,
+    rig: Rig,
+  ) {
     this.root.add(new HemisphereLight(0x2a2440, 0x05050a, 0.18));
 
     const key = new SpotLight(0xffd6a8, 42, 0, 0.62, 0.7, 2);
@@ -61,10 +71,27 @@ export class StageLights {
     wash.position.set(0, 4.5, -9);
     this.root.add(wash);
 
-    // house light: a faint cold glow so the tiers read as a bowl, not as cut-outs
-    const house = new PointLight(0x4a56b8, 900, 0, 2);
-    house.position.set(0, 14, -12);
+    // house light: a faint cold glow so the stands read as a bowl
+    const house = new PointLight(0x3a46a8, 260, 0, 2);
+    house.position.set(0, 12, -5); // grazing the stands from the stage side: risers lit, treads dark
     this.root.add(house);
+
+    this.addRigBeams(rig);
+  }
+
+  /** Every other fixture of the ceiling rig throws a coloured beam towards the stage. */
+  private addRigBeams(rig: Rig): void {
+    const random = seededRandom(31);
+    rig.lamps.forEach((lamp, i) => {
+      if (i % 2 === 1) return;
+      const color = RIG_PALETTE[i % RIG_PALETTE.length] ?? 0xffffff;
+      const beam = new Beam(color, 24, 0.9 + random() * 0.5, 0.06);
+      const from = new Vector3(lamp.x, lamp.y, lamp.z);
+      const to = new Vector3(lamp.x * 0.15 + (random() - 0.5) * 3, 0.5, -2 + (random() - 0.5) * 2);
+      beam.aim(from, to);
+      this.root.add(beam.mesh);
+      this.sweeps.push({ beam, from, to, phase: random() * Math.PI * 2 });
+    });
   }
 
   update(elapsed: number): void {
