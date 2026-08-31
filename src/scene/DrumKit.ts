@@ -67,6 +67,19 @@ export class DrumKit {
     return this.keyByProxy.get(object) ?? null;
   }
 
+  /** World point a stick lands on for this element; null for the kick (played by the foot). */
+  strikePoint(key: KitKey): Vector3 | null {
+    const view = this.views.get(key);
+    if (!view || view.element.kind === 'kick') return null;
+    const { placement, kind } = view.element;
+    const local =
+      kind === 'drum'
+        ? new Vector3(0, (placement.depth ?? 0.2) / 2 + 0.004, placement.radius * 0.35)
+        : new Vector3(0, 0.012, placement.radius * 0.55);
+    view.group.updateWorldMatrix(true, false);
+    return view.group.localToWorld(local);
+  }
+
   /** A stroke lands on this element. */
   hit(key: KitKey, velocity: number): void {
     const view = this.views.get(key);

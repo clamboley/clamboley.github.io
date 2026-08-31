@@ -13,6 +13,7 @@ import { createPostProcessing, type PostProcessing } from '../scene/PostProcessi
 import { PovCamera } from '../scene/PovCamera.ts';
 import { createStage } from '../scene/Stage.ts';
 import { StageLights } from '../scene/StageLights.ts';
+import { Sticks, type Strike } from '../scene/Sticks.ts';
 import type { Hud } from '../ui/Hud.ts';
 import type { RedirectOverlay } from '../ui/RedirectOverlay.ts';
 import { readMotionPrefs } from '../util/motion.ts';
@@ -52,6 +53,7 @@ export class App {
   private readonly kit: DrumKit;
   private readonly crowd: Crowd;
   private readonly lights: StageLights;
+  private readonly sticks = new Sticks();
   private readonly post: PostProcessing;
   private readonly audio = new AudioEngine();
   private readonly look: LookInput;
@@ -83,7 +85,13 @@ export class App {
     this.kit = new DrumKit(KIT);
     this.crowd = new Crowd(coarsePointer ? 140 : 260, motion);
     this.lights = new StageLights(motion);
-    this.scene.add(createStage(), this.kit.root, this.crowd.root, this.lights.root);
+    this.scene.add(
+      createStage(),
+      this.kit.root,
+      this.crowd.root,
+      this.lights.root,
+      this.sticks.root,
+    );
     this.renderer.setClearColor(BACKGROUND, 1);
     this.post = createPostProcessing(this.renderer, this.scene, this.pov.camera);
 
@@ -123,6 +131,7 @@ export class App {
       case 'idle':
         this.hud.setTarget(null);
         this.overlay.hide();
+        this.sticks.hide();
         break;
       case 'hover':
         this.hud.setTarget(KIT_BY_KEY[next.target].destination.label);
@@ -132,6 +141,7 @@ export class App {
         break;
       case 'redirect':
         this.hud.setTarget(null);
+        this.sticks.hide();
         this.overlay.show(KIT_BY_KEY[next.target], { stay: this.stayOnRedirect });
         break;
     }
@@ -161,6 +171,7 @@ export class App {
     this.audio.unlock();
     this.fillEndsAt = Infinity;
     this.fsm.trigger();
+    this.sticks.show();
 
     void this.audio.whenRunning().then(() => {
       if (this.fsm.state.name !== 'fill') return;
@@ -170,6 +181,13 @@ export class App {
         .sort((a, b) => a.at - b.at);
       this.fillEndsAt = start + fillDuration(element.fill);
       this.audio.cheer(start + 0.75);
+
+      const strikes: Strike[] = [];
+      for (const hit of element.fill.hits) {
+        const point = this.kit.strikePoint(hit.key);
+        if (point) strikes.push({ at: start + hit.t, key: hit.key, point });
+      }
+      this.sticks.play(strikes);
     });
   };
 
@@ -198,6 +216,7 @@ export class App {
     this.kit.update(dt, elapsed, hovered);
     this.crowd.update(dt, elapsed);
     this.lights.update(elapsed);
+    this.sticks.update(this.audio.currentTime, dt);
 
     this.post.render(dt);
   };
