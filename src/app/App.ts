@@ -16,7 +16,8 @@ import { Props } from '../scene/Props.ts';
 import { createStage } from '../scene/Stage.ts';
 import { StageLights } from '../scene/StageLights.ts';
 import { Sticks, type Strike } from '../scene/Sticks.ts';
-import { Venue } from '../scene/Venue.ts';
+import { LightRig } from '../scene/Rig.ts';
+import { Sky } from '../scene/Sky.ts';
 import { withBase } from '../util/base.ts';
 import type { Hud } from '../ui/Hud.ts';
 import type { RedirectOverlay } from '../ui/RedirectOverlay.ts';
@@ -54,7 +55,8 @@ export class App {
   private readonly lights: StageLights;
   private readonly sticks = new Sticks();
   private readonly props = new Props();
-  private readonly venue = new Venue();
+  private readonly rig = new LightRig();
+  private readonly sky: Sky;
   private readonly post: PostProcessing;
   private readonly audio = new AudioEngine();
   private readonly look: LookInput;
@@ -79,13 +81,14 @@ export class App {
     this.renderer = createRenderer();
     container.appendChild(this.renderer.domElement);
 
-    this.scene.fog = new FogExp2(BACKGROUND, 0.03);
+    this.scene.fog = new FogExp2(0x070812, 0.014);
     this.scene.environment = createStageEnvironment(this.renderer);
     this.scene.environmentIntensity = 0.45;
     this.pov = new PovCamera(motion);
     this.kit = new DrumKit(KIT);
     this.crowd = new Crowd(coarsePointer ? 90 : 170, assets.crowdIndividualDepth, motion);
-    this.lights = new StageLights(motion, this.venue.rig);
+    this.lights = new StageLights(motion, this.rig.rig);
+    this.sky = new Sky(this.renderer.getPixelRatio());
     this.scene.add(
       createStage(),
       this.kit.root,
@@ -93,7 +96,8 @@ export class App {
       this.lights.root,
       this.sticks.root,
       this.props.root,
-      this.venue.root,
+      this.rig.root,
+      this.sky.root,
     );
     this.loadGeneratedAssets();
     this.renderer.setClearColor(BACKGROUND, 1);
@@ -122,7 +126,7 @@ export class App {
     void this.crowd
       .loadPeople(assets.crowd, assets.crowdDetailDistance, withBase(''))
       .catch(report('Crowd models'));
-    void this.crowd.loadBlocks(assets.crowdBlocks.map(withBase)).catch(report('Crowd blocks'));
+    void this.crowd.loadBlocks(assets.crowdBlocks, withBase('')).catch(report('Crowd blocks'));
     void this.props
       .loadStage(props.wedges.map(withBase), withBase(props.truss))
       .catch(report('Stage props'));
@@ -237,7 +241,7 @@ export class App {
     this.kit.update(dt, elapsed, hovered);
     this.crowd.update(dt, elapsed);
     this.lights.update(elapsed);
-    this.venue.update(elapsed);
+    this.sky.update(elapsed);
     this.sticks.update(this.audio.currentTime, dt);
 
     this.post.render(dt);

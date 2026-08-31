@@ -168,6 +168,36 @@ export function floorRoughnessTexture(): Texture {
   return dataTexture(canvas, 24);
 }
 
+/**
+ * Stands at night: rows of seats and people as dark bands with sparse
+ * specks, laid along v so the rows follow the steps of the lathe.
+ */
+export function standsTexture(): Texture {
+  const size = 1024;
+  const [canvas, ctx] = createCanvas(size);
+  ctx.fillStyle = '#07080c';
+  ctx.fillRect(0, 0, size, size);
+  const random = seededRandom(77);
+  const rows = 34;
+  for (let r = 0; r < rows; r++) {
+    const y0 = (r / rows) * size;
+    const h = size / rows;
+    // riser: a shade lighter, tread: black
+    ctx.fillStyle = r % 12 === 11 ? '#1c1e2c' : '#101219';
+    ctx.fillRect(0, y0, size, h * 0.55);
+    // people and seats: specks along the row
+    for (let i = 0; i < 260; i++) {
+      const v = 18 + random() * 40;
+      ctx.fillStyle = `rgb(${v},${v + 2},${v + 8})`;
+      ctx.fillRect(random() * size, y0 + random() * h * 0.5, 1 + random() * 2, 2 + random() * 3);
+    }
+  }
+  const texture = dataTexture(canvas);
+  texture.colorSpace = SRGBColorSpace;
+  texture.repeat.set(24, 1);
+  return texture;
+}
+
 /** Soft round sprite for point lights (phones). */
 export function glowSpriteTexture(): Texture {
   const size = 64;

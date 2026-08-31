@@ -2,7 +2,7 @@ import { Group, HemisphereLight, PointLight, SpotLight, Vector3 } from 'three';
 import type { MotionPrefs } from '../util/motion.ts';
 import { seededRandom } from '../util/random.ts';
 import { Beam } from './Beams.ts';
-import type { Rig } from './Venue.ts';
+import type { Rig } from './Rig.ts';
 
 /** Colours of the rig, in the order they are dealt to the fixtures. */
 const RIG_PALETTE = [
@@ -71,23 +71,17 @@ export class StageLights {
     wash.position.set(0, 4.5, -9);
     this.root.add(wash);
 
-    // house light: a faint cold glow so the stands read as a bowl
-    const house = new PointLight(0x3a46a8, 260, 0, 2);
-    house.position.set(0, 12, -5); // grazing the stands from the stage side: risers lit, treads dark
-    this.root.add(house);
-
     this.addRigBeams(rig);
   }
 
-  /** Every other fixture of the ceiling rig throws a coloured beam towards the stage. */
+  /** Every fixture of the rig throws a coloured beam at its target, sweeping slowly. */
   private addRigBeams(rig: Rig): void {
     const random = seededRandom(31);
     rig.lamps.forEach((lamp, i) => {
-      if (i % 2 === 1) return;
       const color = RIG_PALETTE[i % RIG_PALETTE.length] ?? 0xffffff;
-      const beam = new Beam(color, 24, 0.9 + random() * 0.5, 0.06);
       const from = new Vector3(lamp.x, lamp.y, lamp.z);
-      const to = new Vector3(lamp.x * 0.15 + (random() - 0.5) * 3, 0.5, -2 + (random() - 0.5) * 2);
+      const to = new Vector3(lamp.target.x, lamp.target.y, lamp.target.z);
+      const beam = new Beam(color, from.distanceTo(to) * 1.15, 1.1 + random() * 0.6, 0.055);
       beam.aim(from, to);
       this.root.add(beam.mesh);
       this.sweeps.push({ beam, from, to, phase: random() * Math.PI * 2 });

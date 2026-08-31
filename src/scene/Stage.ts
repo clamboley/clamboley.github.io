@@ -14,7 +14,7 @@ export function createStage(): Group {
   root.add(stage);
 
   const pit = new Mesh(
-    new PlaneGeometry(80, 80),
+    new PlaneGeometry(600, 600),
     new MeshStandardMaterial({ color: 0x050508, roughness: 0.9 }),
   );
   pit.rotation.x = -Math.PI / 2;

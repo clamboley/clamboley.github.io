@@ -25,7 +25,10 @@ export const assets = {
   crowdDetailDistance: 2.5,
   /** Individual people stop here; beyond, blocks of thirty fill the pit. */
   crowdIndividualDepth: 6,
-  crowdBlocks: ['models/venue/crowd-block-s1.lo.glb', 'models/venue/crowd-block-s2.lo.glb'],
+  crowdBlocks: [
+    { hi: 'models/venue/crowd-block-s1.lo.glb', lo: 'models/venue/crowd-block-s1.lo.glb' },
+    { hi: 'models/venue/crowd-block-s2.lo.glb', lo: 'models/venue/crowd-block-s2.lo.glb' },
+  ] as CrowdVariant[],
   props: {
     wedges: ['models/props/stage-monitor-s1.lo.glb', 'models/props/stage-monitor-s2.lo.glb'],
     truss: 'models/props/truss-par-s1.lo.glb',

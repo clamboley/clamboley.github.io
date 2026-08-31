@@ -8,7 +8,6 @@ import {
   InstancedMesh,
   MathUtils,
   MeshStandardMaterial,
-  Mesh,
   Object3D,
   Points,
   PointsMaterial,
@@ -25,9 +24,12 @@ const BASE_ENERGY = 0.45;
 const ENERGY_LAMBDA = 0.6; // return to base energy
 const PIT_FLOOR = -0.8; // the audience stands below the stage
 const PIT_FRONT = -4; // z of the first row
-const PIT_DEPTH = 17; // to the foot of the stands
-const PIT_LIGHTS = 2600; // phones held up across the pit
-const BLOCK_WIDTH = 7; // metres covered by one generated block of thirty people
+const PIT_DEPTH = 46; // how far the blocks of people go
+const PIT_LIGHTS = 9000; // phones held up across the field
+const BLOCK_DETAIL_DEPTH = 14; // blocks nearer than this use the detailed model
+const BLOCK_HEIGHT = 2.3; // metres, a block of thirty people with their arms up
+const BLOCK_WIDTH = 4.2; // metres, six people shoulder to shoulder
+const BLOCK_DEPTH = 2.6;
 const ARMS_SHARE = 0.28;
 const SWAP_LAMBDA = 2.5; // capsules → generated people cross-fade
 
@@ -133,8 +135,9 @@ export class Crowd {
       positions[i * 3 + 2] = person.z + 0.2;
     }
     for (let i = near; i < near + PIT_LIGHTS; i++) {
-      const z = PIT_FRONT - 1 - random() * (PIT_DEPTH - 1);
-      const halfWidth = 13 + (-z - PIT_FRONT) * 0.4; // the pit runs to the foot of the stands
+      const depth = Math.pow(random(), 0.8) * (PIT_DEPTH + 30); // thinning with distance
+      const z = PIT_FRONT - 1 - depth;
+      const halfWidth = 13 + depth * 0.55; // the field widens
       positions[i * 3] = (random() - 0.5) * 2 * halfWidth;
       positions[i * 3 + 1] = PIT_FLOOR + (-z - 4) * 0.04 + 1.7 + random() * 0.6;
       positions[i * 3 + 2] = z;
@@ -154,36 +157,59 @@ export class Crowd {
     this.root.add(this.blocks);
   }
 
-  /** Blocks of thirty people, staggered across the back of the pit. */
-  async loadBlocks(urls: readonly string[]): Promise<void> {
-    const models = await Promise.all(urls.map((url) => loadModel(url)));
+  /**
+   * Blocks of thirty people fill the pit beyond the individual rows and along
+   * the sides, instanced per variant, every block turned towards the stage.
+   */
+  async loadBlocks(variants: readonly CrowdVariant[], base = ''): Promise<void> {
+    const models = await Promise.all(
+      variants.map(async (variant) => ({
+        hi: await loadModel(base + variant.hi),
+        lo: await loadModel(base + variant.lo),
+      })),
+    );
     const random = seededRandom(7);
-    let n = 0;
-    const first = PIT_FRONT - 1.5; // side blocks start level with the first rows
-    const last = PIT_FRONT - PIT_DEPTH + 1;
-    for (let z = first; z > last; z -= 3.2) {
-      const offset = (n % 2) * BLOCK_WIDTH * 0.5;
-      const halfWidth = 14 + (-z - PIT_FRONT) * 0.4;
-      for (let x = -halfWidth + offset; x <= halfWidth; x += BLOCK_WIDTH * 0.85) {
-        const model = models[n % models.length];
-        if (!model) continue;
+    const slots: { x: number; z: number }[] = [];
+    const rowStep = BLOCK_DEPTH * 0.85;
+    for (let z = PIT_FRONT - 1.2; z > PIT_FRONT - PIT_DEPTH + 0.5; z -= rowStep) {
+      const halfWidth = 13.5 + (-z - PIT_FRONT) * 0.55;
+      const offset = (slots.length % 2) * BLOCK_WIDTH * 0.5;
+      for (let x = -halfWidth + offset; x <= halfWidth; x += BLOCK_WIDTH * 0.92) {
         // the individual people own the middle of the first rows
-        if (z > PIT_FRONT - this.individualDepth - 1 && Math.abs(x) < 11) continue;
-        const mesh = new Mesh(model.geometry, model.material);
-        const scale = (BLOCK_WIDTH * (0.9 + random() * 0.2)) / model.size.x;
-        mesh.scale.setScalar(scale);
-        const floor = PIT_FLOOR + (-z - 4) * 0.04;
-        mesh.position.set(
-          x + (random() - 0.5) * 1.5,
-          floor - model.bounds.min.y * scale,
-          z + (random() - 0.5) * 1.2,
-        );
-        mesh.rotation.y = (random() - 0.5) * 0.3;
-        this.blocks.add(mesh);
-        n++;
+        if (z > PIT_FRONT - this.individualDepth - 0.5 && Math.abs(x) < 10.5) continue;
+        slots.push({ x: x + (random() - 0.5) * 0.6, z: z + (random() - 0.5) * 0.5 });
       }
     }
-    for (const model of models) model.material.envMapIntensity = 0.3;
+    const place = (model: LoadedModel, mine: { x: number; z: number }[]) => {
+      if (mine.length === 0) return;
+      const mesh = new InstancedMesh(model.geometry, model.material, mine.length);
+      model.material.envMapIntensity = 0.3;
+      const scale = BLOCK_HEIGHT / model.size.y;
+      mine.forEach((slot, i) => {
+        const floor = PIT_FLOOR + (-slot.z - 4) * 0.04;
+        this.dummy.position.set(slot.x, floor - model.bounds.min.y * scale, slot.z);
+        this.dummy.scale.setScalar(scale * (0.95 + random() * 0.1));
+        // face the drummer, with a little scatter
+        this.dummy.rotation.set(
+          0,
+          Math.atan2(-slot.x, -slot.z + 0.15) + Math.PI + (random() - 0.5) * 0.25,
+          0,
+        );
+        this.dummy.updateMatrix();
+        mesh.setMatrixAt(i, this.dummy.matrix);
+      });
+      mesh.instanceMatrix.needsUpdate = true;
+      this.blocks.add(mesh);
+    };
+    models.forEach((model, index) => {
+      const mine = slots.filter((_, i) => i % models.length === index);
+      const nearBlock = (slot: { z: number }) => slot.z > PIT_FRONT - BLOCK_DETAIL_DEPTH;
+      place(model.hi, mine.filter(nearBlock));
+      place(
+        model.lo,
+        mine.filter((slot) => !nearBlock(slot)),
+      );
+    });
   }
 
   /**
