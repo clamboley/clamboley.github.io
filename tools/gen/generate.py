@@ -21,6 +21,18 @@ from PIL import Image  # noqa: E402
 IMAGE_SUFFIXES = {'.png', '.jpg', '.jpeg', '.webp'}
 
 
+def synthetic_envmap(height: int = 256, width: int = 512) -> np.ndarray:
+    """Soft grey sky, darker ground, three warm key lights: neutral preview lighting."""
+    v = np.linspace(0, 1, height, dtype=np.float32)[:, None]
+    sky = (1.6 - 1.3 * v)[..., None] * np.array([0.9, 0.95, 1.0], dtype=np.float32)
+    hdr = np.repeat(sky, width, axis=1)
+    yy, xx = np.mgrid[0:height, 0:width].astype(np.float32)
+    for cx, cy in [(width * 0.25, height * 0.28), (width * 0.6, height * 0.22), (width * 0.85, height * 0.35)]:
+        blob = np.exp(-(((xx - cx) / 18) ** 2 + ((yy - cy) / 12) ** 2))
+        hdr += blob[..., None] * np.array([18.0, 16.0, 13.0], dtype=np.float32)
+    return hdr
+
+
 def preview_sheet(mesh, envmap, path: Path, frames: int = 6) -> None:
     """Renders a turntable and lays a few frames side by side (PBR + normals)."""
     from trellis2.utils import render_utils
@@ -63,14 +75,14 @@ def main() -> int:
     pipeline.cuda()
     print(f'pipeline loaded in {time.time() - t0:.0f}s')
 
-    envmap = None
-    if args.envmap:
-        hdr = cv2.imread(args.envmap, cv2.IMREAD_UNCHANGED)
-        if hdr is None:  # e.g. OpenCV built without OpenEXR: previews use the default lighting
-            print('envmap unreadable, previews without it:', args.envmap)
-        else:
-            hdr = cv2.cvtColor(hdr, cv2.COLOR_BGR2RGB)[..., :3]
-            envmap = EnvMap(torch.tensor(hdr, dtype=torch.float32, device='cuda'))
+    hdr = cv2.imread(args.envmap, cv2.IMREAD_UNCHANGED) if args.envmap else None
+    if hdr is not None:
+        hdr = cv2.cvtColor(hdr, cv2.COLOR_BGR2RGB)[..., :3].astype(np.float32)
+    else:  # OpenCV may lack OpenEXR: a synthetic studio sky is enough for previews
+        if args.envmap:
+            print('envmap unreadable, using a synthetic one:', args.envmap)
+        hdr = synthetic_envmap()
+    envmap = EnvMap(torch.tensor(hdr, dtype=torch.float32, device='cuda'))
 
     for file in files:
         stem = file.stem
