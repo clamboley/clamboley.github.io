@@ -15,11 +15,13 @@ const vertexShader = /* glsl */ `
   varying float vAlong;
   varying vec3 vNormal;
   varying vec3 vView;
+  varying float vDepth;
   void main() {
     vAlong = uv.y;
     vNormal = normalize(normalMatrix * normal);
     vec4 mv = modelViewMatrix * vec4(position, 1.0);
     vView = normalize(-mv.xyz);
+    vDepth = -mv.z;
     gl_Position = projectionMatrix * mv;
   }
 `;
@@ -31,13 +33,16 @@ const fragmentShader = /* glsl */ `
   varying float vAlong;
   varying vec3 vNormal;
   varying vec3 vView;
+  varying float vDepth;
   void main() {
     // thickest where we look through the middle of the cone, soft at the silhouette
     float facing = abs(dot(normalize(vNormal), normalize(vView)));
+    // never wash the whole screen when a beam sweeps across the camera
+    float nearFade = smoothstep(2.0, 8.0, vDepth);
     // brightest near the source but never a hot spot at the apex itself
     float along = pow(vAlong, 1.6) * smoothstep(1.0, 0.82, vAlong);
     float dust = 0.85 + 0.15 * sin(time * 2.3 + vAlong * 18.0) * sin(time * 1.1 + vAlong * 7.0);
-    gl_FragColor = vec4(color, opacity * along * facing * dust);
+    gl_FragColor = vec4(color, opacity * along * facing * dust * nearFade);
   }
 `;
 

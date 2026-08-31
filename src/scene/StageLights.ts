@@ -81,7 +81,13 @@ export class StageLights {
       const color = RIG_PALETTE[i % RIG_PALETTE.length] ?? 0xffffff;
       const from = new Vector3(lamp.x, lamp.y, lamp.z);
       const to = new Vector3(lamp.target.x, lamp.target.y, lamp.target.z);
-      const beam = new Beam(color, from.distanceTo(to) * 1.15, 1.1 + random() * 0.6, 0.055);
+      const tower = lamp.y > 12; // tower beams converge towards the stage: keep them fainter
+      const beam = new Beam(
+        color,
+        from.distanceTo(to) * 1.15,
+        1.1 + random() * 0.6,
+        tower ? 0.032 : 0.055,
+      );
       beam.aim(from, to);
       this.root.add(beam.mesh);
       this.sweeps.push({ beam, from, to, phase: random() * Math.PI * 2 });

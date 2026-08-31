@@ -73,7 +73,8 @@ export class LightRig {
           x: x + i,
           y: PIT_FLOOR + 14.4,
           z,
-          target: { x: i * 1.5, y: 1, z: -2 + i },
+          // spread across the stage front so the cones never pile up in one spot
+          target: { x: side * 2 + i * 6, y: 0.2, z: -3.6 + i * 1.2 },
         };
         this.rig.lamps.push(lamp);
         const disc = new Mesh(lampGeometry, lampFace);

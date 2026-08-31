@@ -15,6 +15,8 @@ import { HalfFloatType, type Camera, type Scene, type WebGLRenderer } from 'thre
 export interface PostProcessing {
   render(dt: number): void;
   setSize(width: number, height: number): void;
+  /** Exposed for tuning and debugging. */
+  bloom: BloomEffect;
 }
 
 /** Bloom on the highlights, filmic tone mapping, anti-aliasing, then grain and vignette. */
@@ -49,5 +51,6 @@ export function createPostProcessing(
     setSize: (width, height) => {
       composer.setSize(width, height);
     },
+    bloom,
   };
 }
