@@ -18,6 +18,8 @@ SHARE="${SHARE:-$HOME/vitrine-gen}"
 
 echo "job=$SLURM_JOB_ID node=$(hostname) batch=$BATCH start=$(date)"
 source "$SHARE/tools/activate.sh"
+# packages the packed env may predate (nodes have internet); harmless when present
+"$ENV/bin/python" -c "import einops" 2>/dev/null || "$ENV/bin/pip" install -q einops
 export ATTN_BACKEND="${ATTN_BACKEND:-flash_attn}"
 cd "$ROOT/TRELLIS.2"
 "$ENV/bin/python" "$SHARE/tools/generate.py" \

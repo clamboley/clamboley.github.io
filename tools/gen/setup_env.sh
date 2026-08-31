@@ -40,7 +40,7 @@ log "torch 2.6 (cu124 wheels)"
 "$PY" -c "import torch; print('torch', torch.__version__, 'cuda', torch.version.cuda, 'gpu', torch.cuda.is_available())"
 
 log "basic dependencies"
-"$PIP" install -q imageio imageio-ffmpeg tqdm easydict opencv-python-headless ninja trimesh transformers tensorboard pandas lpips zstandard kornia timm huggingface_hub
+"$PIP" install -q imageio imageio-ffmpeg tqdm easydict opencv-python-headless ninja trimesh transformers tensorboard pandas lpips zstandard kornia timm einops huggingface_hub
 "$PIP" install -q "git+https://github.com/EasternJournalist/utils3d.git@9a4eb15e4021b67b12c460c7057d642626897ec8"
 "$PIP" install -q pillow-simd || echo "pillow-simd skipped"
 
