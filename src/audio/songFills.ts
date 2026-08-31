@@ -118,20 +118,23 @@ export const SONG_FILLS: Readonly<Record<KitKey, Fill>> = {
     [2, 'floor', 0.85],
     [2.25, 'tom2', 1],
   ]),
-  // Blog — the drum break of "In the Air Tonight"
-  floor: fill(96, [
-    [0, 'snare', 0.7],
-    [0.25, 'snare', 0.75],
-    [0.5, 'tom1', 0.8],
-    [0.75, 'tom1', 0.8],
-    [1, 'tom2', 0.85],
-    [1.25, 'tom2', 0.85],
-    [1.5, 'floor', 0.9],
-    [1.75, 'floor', 0.95],
-    [2.25, 'floor', 1],
-    [2.25, 'crash', 0.85],
-    [2.25, 'kick', 1],
-  ]),
+  // Blog — a floor-tom fill, from Corentin's MuseScore score
+  // (MIDI says 57 bpm, the audio export runs at 125: converted with --tempo 125; sticking pending)
+  floor: {
+    sample: 'samples/fills/floor-tom.wav',
+    hits: [
+      { t: 0, key: 'floor', velocity: 0.63 },
+      { t: 0, key: 'hihat', velocity: 0.63 },
+      { t: 0.24, key: 'kick', velocity: 0.63 },
+      { t: 0.48, key: 'kick', velocity: 0.63 },
+      { t: 0.72, key: 'floor', velocity: 0.63 },
+      { t: 0.96, key: 'hihat', velocity: 0.63 },
+      { t: 1.2, key: 'kick', velocity: 0.63 },
+      { t: 1.44, key: 'kick', velocity: 0.63 },
+      { t: 1.68, key: 'floor', velocity: 0.63 },
+      { t: 1.92, key: 'snare', velocity: 0.76 },
+    ],
+  },
   // CV — the "Rosanna" half-time shuffle, from Corentin's MuseScore score
   // (MIDI says 95 bpm, the audio export runs at 151: converted with --tempo 151)
   hihat: {
