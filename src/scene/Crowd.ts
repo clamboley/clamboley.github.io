@@ -13,6 +13,7 @@ import {
   PointsMaterial,
   SphereGeometry,
 } from 'three';
+import type { CrowdVariant } from '../assets.config.ts';
 import type { MotionPrefs } from '../util/motion.ts';
 import { seededRandom } from '../util/random.ts';
 import { loadModel, type LoadedModel } from './assets.ts';
@@ -22,6 +23,7 @@ import { glowSpriteTexture } from './textures.ts';
 const BASE_ENERGY = 0.45;
 const ENERGY_LAMBDA = 0.6; // return to base energy
 const PIT_FLOOR = -0.8; // the audience stands below the stage
+const PIT_FRONT = -4; // z of the first row
 const ARMS_SHARE = 0.28;
 const SWAP_LAMBDA = 2.5; // capsules → generated people cross-fade
 
@@ -135,11 +137,29 @@ export class Crowd {
     this.root.add(new Points(geometry, this.phones));
   }
 
-  /** Swaps the silhouettes for generated people, dealt round-robin across the variants. */
-  async loadPeople(urls: readonly string[]): Promise<void> {
-    const models = await Promise.all(urls.map((url) => loadModel(url)));
+  /**
+   * Swaps the silhouettes for generated people, dealt round-robin across the
+   * variants; the front rows get the detailed model, the rest the light one.
+   */
+  async loadPeople(
+    variants: readonly CrowdVariant[],
+    detailDistance: number,
+    base = '',
+  ): Promise<void> {
+    const models = await Promise.all(
+      variants.map(async (variant) => ({
+        hi: await loadModel(base + variant.hi),
+        lo: await loadModel(base + variant.lo),
+      })),
+    );
+    const near = (person: Person) => person.z > PIT_FRONT - detailDistance;
     models.forEach((model, index) => {
-      this.addVariant(model, index, models.length);
+      const people = this.people.filter((_, i) => i % models.length === index);
+      this.addVariant(model.hi, people.filter(near));
+      this.addVariant(
+        model.lo,
+        people.filter((person) => !near(person)),
+      );
     });
     this.swapTarget = 1;
   }
@@ -173,8 +193,8 @@ export class Crowd {
     this.phones.size = 0.08 + Math.sin(elapsed * 3.3) * 0.02 * flicker;
   }
 
-  private addVariant(model: LoadedModel, index: number, total: number): void {
-    const people = this.people.filter((_, i) => i % total === index);
+  private addVariant(model: LoadedModel, people: Person[]): void {
+    if (people.length === 0) return;
     const mesh = new InstancedMesh(model.geometry, model.material, people.length);
     mesh.instanceMatrix.setUsage(DynamicDrawUsage);
     model.material.envMapIntensity = 0.35;

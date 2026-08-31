@@ -118,7 +118,9 @@ export class App {
     const report = (what: string) => (error: unknown) => {
       console.warn(`${what} unavailable`, error);
     };
-    void this.crowd.loadPeople(assets.crowd.map(withBase)).catch(report('Crowd models'));
+    void this.crowd
+      .loadPeople(assets.crowd, assets.crowdDetailDistance, withBase(''))
+      .catch(report('Crowd models'));
     void this.props
       .load(assets.props.wedges.map(withBase), withBase(assets.props.truss))
       .catch(report('Stage props'));

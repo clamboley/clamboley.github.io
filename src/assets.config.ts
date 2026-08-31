@@ -1,18 +1,32 @@
 /** Generated assets (TRELLIS.2, see tools/gen), relative to the public folder. */
+export interface CrowdVariant {
+  /** Detailed model for the front rows. */
+  hi: string;
+  /** Lighter model for the rows further back. */
+  lo: string;
+}
+
+const fan = (name: string): CrowdVariant => ({
+  hi: `models/crowd/${name}.glb`,
+  lo: `models/crowd/${name}.lo.glb`,
+});
+
 export const assets = {
-  /** One GLB per crowd variant; instances are dealt round-robin across them. */
+  /** One entry per crowd variant; people are dealt round-robin across them. */
   crowd: [
-    'models/crowd/fan-arms-up-s1.glb',
-    'models/crowd/fan-arms-up-s2.glb',
-    'models/crowd/fan-phone-s1.glb',
-    'models/crowd/fan-phone-s2.glb',
-    'models/crowd/fan-side-s1.glb',
-    'models/crowd/fan-side-s2.glb',
+    fan('fan-arms-up-s1'),
+    fan('fan-arms-up-s2'),
+    fan('fan-phone-s1'),
+    fan('fan-phone-s2'),
+    fan('fan-side-s1'),
+    fan('fan-side-s2'),
   ],
+  /** Rows nearer than this (metres from the stage edge) get the detailed model. */
+  crowdDetailDistance: 4,
   props: {
-    wedges: ['models/props/wedge-1.glb', 'models/props/wedge-2.glb'],
-    truss: 'models/props/truss-1.glb',
+    wedges: ['models/props/stage-monitor-s1.glb', 'models/props/stage-monitor-s2.glb'],
+    truss: 'models/props/truss-par-s1.glb',
   },
   /** Tiers of seats repeated in an arc behind the pit. */
-  venue: { stand: 'models/venue/stand-1.glb' },
+  venue: { stand: 'models/venue/stand-section-s1.glb' },
 } as const;

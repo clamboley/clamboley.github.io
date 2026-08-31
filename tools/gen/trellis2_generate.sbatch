@@ -10,11 +10,14 @@
 #SBATCH --gres=gpu:h100:1
 #SBATCH --output=%x-%j.log
 
-# Generates a GLB per image of inputs/$BATCH into outputs/$BATCH. Extra flags via GEN_ARGS.
-#   sbatch --export=ALL,BATCH=smoke[,GEN_ARGS="--seed 3"] trellis2_generate.sbatch
+# Generates GLBs per image of inputs/$BATCH into outputs/$OUT (defaults to $BATCH).
+# DECIMATE / TEXTURE take colon-separated levels (--export splits on commas):
+#   sbatch --export=ALL,BATCH=smoke,OUT=smoke-web,DECIMATE=25000:6000,TEXTURE=1024:512 trellis2_generate.sbatch
 set -euo pipefail
 BATCH="${BATCH:?set BATCH=<folder under inputs/>}"
 OUT="${OUT:-$BATCH}"  # output folder under outputs/, defaults to the batch name
+DECIMATE="${DECIMATE:-60000:12000}"
+TEXTURE="${TEXTURE:-2048:1024}"
 SHARE="${SHARE:-$HOME/vitrine-gen}"
 
 echo "job=$SLURM_JOB_ID node=$(hostname) batch=$BATCH start=$(date)"
@@ -29,5 +32,6 @@ cd "$ROOT/TRELLIS.2"
   --inputs "$SHARE/inputs/$BATCH" \
   --out "$SHARE/outputs/$OUT" \
   --envmap "$ROOT/TRELLIS.2/assets/hdri/studio.exr" \
+  --decimate "${DECIMATE//:/,}" --texture "${TEXTURE//:/,}" \
   ${GEN_ARGS:-}
 echo "end=$(date)"

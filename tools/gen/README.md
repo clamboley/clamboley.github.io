@@ -15,7 +15,17 @@ ssh $SLURM_HOST sbatch $SHARE/tools/trellis2_setup.sbatch
 
 # 2. générer : déposer des images dans $SHARE/inputs/<lot>/
 ssh $SLURM_HOST "sbatch --export=ALL,BATCH=<lot> $SHARE/tools/trellis2_generate.sbatch"
-# → $SHARE/outputs/<lot>/<image>.glb + <image>.preview.png + <image>.json
+# → outputs/<lot>/<image>.glb (+ .lo.glb) + .preview.png + .json
+# niveaux de détail à l'export (avant l'atlas UV, sinon les coutures bloquent la simplification) :
+ssh $SLURM_HOST "sbatch --export=ALL,BATCH=<lot>,OUT=<lot>-web,DECIMATE=25000:6000,TEXTURE=1024:512 …/trellis2_generate.sbatch"
+
+# 3. vers le site (WebP + meshopt, sans re-simplifier) :
+tools/gen/ingest.sh $SHARE/outputs/<lot>-web crowd 'fan-*'
+# aperçu local d'un GLB (Blender, 4 vues) :
+blender -b --python tools/gen/preview_glb.py -- fichier.glb apercu.png
 ```
+
+Ordres de grandeur mesurés (RTX 4000 / Intel UHD, 1600×900) : 7,8 M triangles/frame → 60 / 8 fps ;
+viser ≈ 2,5 M triangles pour le milieu de gamme.
 
 Logs : `$SHARE/logs/`.
