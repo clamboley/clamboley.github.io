@@ -18,6 +18,8 @@ export interface FillHit {
   t: number;
   key: KitKey;
   velocity: number;
+  /** Played with the foot (pedal hi-hat): the sound plays, no stick strikes. */
+  foot?: boolean;
 }
 
 /**
