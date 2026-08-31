@@ -84,7 +84,7 @@ export class App {
     this.scene.environmentIntensity = 0.45;
     this.pov = new PovCamera(motion);
     this.kit = new DrumKit(KIT);
-    this.crowd = new Crowd(coarsePointer ? 140 : 260, motion);
+    this.crowd = new Crowd(coarsePointer ? 90 : 170, assets.crowdIndividualDepth, motion);
     this.lights = new StageLights(motion);
     this.scene.add(
       createStage(),
@@ -118,13 +118,17 @@ export class App {
     const report = (what: string) => (error: unknown) => {
       console.warn(`${what} unavailable`, error);
     };
+    const { props } = assets;
     void this.crowd
       .loadPeople(assets.crowd, assets.crowdDetailDistance, withBase(''))
       .catch(report('Crowd models'));
+    void this.crowd.loadBlocks(assets.crowdBlocks.map(withBase)).catch(report('Crowd blocks'));
     void this.props
-      .load(assets.props.wedges.map(withBase), withBase(assets.props.truss))
+      .loadStage(props.wedges.map(withBase), withBase(props.truss))
       .catch(report('Stage props'));
-    void this.venue.load(withBase(assets.venue.stand)).catch(report('Venue'));
+    void this.props.loadBarrier(withBase(props.barrier)).catch(report('Barrier'));
+    void this.props.loadPa(withBase(props.lineArray), withBase(props.subs)).catch(report('PA'));
+    void this.venue.load(withBase(assets.venue.tiers)).catch(report('Venue'));
   }
 
   start(): void {

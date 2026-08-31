@@ -60,6 +60,11 @@ export class StageLights {
     const wash = new PointLight(0x2438a8, 32, 0, 2);
     wash.position.set(0, 4.5, -9);
     this.root.add(wash);
+
+    // house light: a faint cold glow so the tiers read as a bowl, not as cut-outs
+    const house = new PointLight(0x4a56b8, 900, 0, 2);
+    house.position.set(0, 14, -12);
+    this.root.add(house);
   }
 
   update(elapsed: number): void {

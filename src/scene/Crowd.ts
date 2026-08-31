@@ -8,6 +8,7 @@ import {
   InstancedMesh,
   MathUtils,
   MeshStandardMaterial,
+  Mesh,
   Object3D,
   Points,
   PointsMaterial,
@@ -24,6 +25,8 @@ const BASE_ENERGY = 0.45;
 const ENERGY_LAMBDA = 0.6; // return to base energy
 const PIT_FLOOR = -0.8; // the audience stands below the stage
 const PIT_FRONT = -4; // z of the first row
+const PIT_DEPTH = 12;
+const BLOCK_WIDTH = 7; // metres covered by one generated block of thirty people
 const ARMS_SHARE = 0.28;
 const SWAP_LAMBDA = 2.5; // capsules → generated people cross-fade
 
@@ -85,15 +88,20 @@ export class Crowd {
   private swap = 0;
   private swapTarget = 0;
 
+  private readonly individualDepth: number;
+  private readonly blocks = new Group();
+
   constructor(
     count: number,
+    individualDepth: number,
     private readonly motion: MotionPrefs,
   ) {
     const random = seededRandom(1979);
+    this.individualDepth = individualDepth;
     for (let i = 0; i < count; i++) {
-      const z = -4 - random() * 11;
+      const z = PIT_FRONT - random() * individualDepth;
       this.people.push({
-        x: (random() - 0.5) * 16,
+        x: (random() - 0.5) * 22,
         y: PIT_FLOOR + (-z - 4) * 0.04, // gentle rake so the back rows show
         z,
         height: 1.6 + random() * 0.3,
@@ -135,6 +143,36 @@ export class Crowd {
       blending: AdditiveBlending,
     });
     this.root.add(new Points(geometry, this.phones));
+    this.root.add(this.blocks);
+  }
+
+  /** Blocks of thirty people, staggered across the back of the pit. */
+  async loadBlocks(urls: readonly string[]): Promise<void> {
+    const models = await Promise.all(urls.map((url) => loadModel(url)));
+    const random = seededRandom(7);
+    let n = 0;
+    const first = PIT_FRONT - this.individualDepth - 1.5;
+    const last = PIT_FRONT - PIT_DEPTH - 8;
+    for (let z = first; z > last; z -= 3.2) {
+      const offset = (n % 2) * BLOCK_WIDTH * 0.5;
+      for (let x = -14 + offset; x <= 14; x += BLOCK_WIDTH * 0.85) {
+        const model = models[n % models.length];
+        if (!model) continue;
+        const mesh = new Mesh(model.geometry, model.material);
+        const scale = (BLOCK_WIDTH * (0.9 + random() * 0.2)) / model.size.x;
+        mesh.scale.setScalar(scale);
+        const floor = PIT_FLOOR + (-z - 4) * 0.04;
+        mesh.position.set(
+          x + (random() - 0.5) * 1.5,
+          floor - model.bounds.min.y * scale,
+          z + (random() - 0.5) * 1.2,
+        );
+        mesh.rotation.y = (random() - 0.5) * 0.3;
+        this.blocks.add(mesh);
+        n++;
+      }
+    }
+    for (const model of models) model.material.envMapIntensity = 0.3;
   }
 
   /**
