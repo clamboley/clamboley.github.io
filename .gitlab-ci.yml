@@ -1,0 +1,19 @@
+# Same checks as the GitHub workflow, for pushes to the GitLab remote.
+# Deployment happens from GitHub (Pages); delete this file if no runner is available.
+image: node:24
+
+stages: [check]
+
+cache:
+  key:
+    files: [package-lock.json]
+  paths: [.npm/]
+
+check:
+  stage: check
+  script:
+    - npm ci --cache .npm --prefer-offline
+    - npm run check
+  artifacts:
+    paths: [dist/]
+    expire_in: 1 week
