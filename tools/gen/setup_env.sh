@@ -40,7 +40,7 @@ log "torch 2.6 (cu124 wheels)"
 "$PY" -c "import torch; print('torch', torch.__version__, 'cuda', torch.version.cuda, 'gpu', torch.cuda.is_available())"
 
 log "basic dependencies"
-"$PIP" install -q imageio imageio-ffmpeg tqdm easydict opencv-python-headless ninja trimesh transformers tensorboard pandas lpips zstandard kornia timm einops huggingface_hub
+"$PIP" install -q imageio imageio-ffmpeg tqdm easydict opencv-python-headless ninja trimesh "transformers>=4.57,<4.58" tensorboard pandas lpips zstandard kornia timm einops huggingface_hub
 "$PIP" install -q "git+https://github.com/EasternJournalist/utils3d.git@9a4eb15e4021b67b12c460c7057d642626897ec8"
 "$PIP" install -q pillow-simd || echo "pillow-simd skipped"
 
@@ -92,6 +92,9 @@ try:
 except Exception as e:
     print('warn flash_attn missing ->', e)
 PYEOF
+log "patching the checkout"
+"$PY" "$SHARE/tools/patch_trellis2.py" "$ROOT/TRELLIS.2"
+
 log "packing: conda-pack (relocatable env) + work tarball (code, JIT cache)"
 "$PIP" install -q conda-pack
 "$ENV/bin/conda-pack" -p "$ENV" -o "$SHARE/env.tar.gz.part" --format tar.gz --compress-level 3 --n-threads -1 --force

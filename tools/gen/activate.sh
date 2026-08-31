@@ -12,6 +12,7 @@ if [ ! -x "$ENV/bin/python" ]; then
   tar -xzf "$SHARE/env.tar.gz" -C "$ENV"
   "$ENV/bin/python" "$ENV/bin/conda-unpack"  # its shebang wants a "python" on PATH
   tar -C "$ROOT" --use-compress-program="$ENV/bin/unzstd" -xf "$SHARE/work.tar.zst"
+  "$ENV/bin/python" "$SHARE/tools/patch_trellis2.py" "$ROOT/TRELLIS.2"
   echo "[$(date +%H:%M:%S)] environment restored"
 fi
 
