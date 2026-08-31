@@ -106,11 +106,26 @@ export class AudioEngine {
     return start;
   }
 
-  /** The count-in: a stick click at each of the given times. */
-  countIn(times: readonly number[]): void {
+  /**
+   * The count-in: a stick click at each of the given times, the last one
+   * accented. Plays the preloaded sample when it is there, else synthesizes.
+   */
+  countIn(times: readonly number[], sampleUrl?: string): void {
     const graph = this.requireGraph();
+    const sample = sampleUrl === undefined ? undefined : this.samples.get(sampleUrl);
     times.forEach((at, i) => {
-      graph.synth.stick(at, i === times.length - 1 ? 1 : 0.85);
+      const velocity = i === times.length - 1 ? 1 : 0.85;
+      if (sample) {
+        const source = graph.ctx.createBufferSource();
+        source.buffer = sample;
+        const gain = graph.ctx.createGain();
+        gain.gain.value = velocity;
+        source.connect(gain);
+        gain.connect(graph.master);
+        source.start(at);
+      } else {
+        graph.synth.stick(at, velocity);
+      }
     });
   }
 

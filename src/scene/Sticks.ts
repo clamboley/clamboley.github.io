@@ -20,6 +20,7 @@ export interface CountFrame {
   meet: Vector3;
   right: Vector3;
   up: Vector3;
+  forward: Vector3;
 }
 
 export interface Strike {
@@ -126,7 +127,7 @@ export class Sticks {
    * the visitor is looking.
    */
   countIn(times: readonly number[], frame: CountFrame): void {
-    const { meet, right: r, up } = frame;
+    const { meet, right: r, up, forward } = frame;
     const left = this.hand('left');
     left.strikes = [];
     left.hold = {
@@ -138,12 +139,15 @@ export class Sticks {
     // towards the hand, so overshoot by half a stick along the axis the
     // stick will actually have at impact (solved by fixed point, since the
     // hand itself follows the target)
-    const hit = meet.clone();
+    // the right stick passes just in front of the left one and stops a touch
+    // higher, so the shafts rest against each other instead of interpenetrating
+    const contact = meet.clone().addScaledVector(forward, -0.013).addScaledVector(up, 0.006);
+    const hit = contact.clone();
     const handAt = new Vector3();
     for (let i = 0; i < 3; i++) {
       handAt.copy(hit).sub(right.restTip).multiplyScalar(ARM_SHARE).add(right.anchor);
       this.dir.subVectors(hit, handAt).normalize();
-      hit.copy(meet).addScaledVector(this.dir, LENGTH / 2);
+      hit.copy(contact).addScaledVector(this.dir, LENGTH / 2);
     }
     right.hold = undefined;
     right.strikes = times.map((at) => ({ at, key: 'snare', point: hit }));

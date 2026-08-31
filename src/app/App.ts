@@ -230,12 +230,18 @@ export class App {
     this.audio.unlock();
     if (this.audio.currentTime < this.countEndsAt) return;
     this.countEndsAt = Infinity; // ignore further empty clicks while we schedule
-    void this.audio.whenRunning().then(() => {
+    const sample = withBase(site.countIn.sample);
+    void Promise.all([
+      this.audio.whenRunning(),
+      this.audio.preload(sample).catch((error: unknown) => {
+        console.warn('Count-in sample unavailable, synthesizing', error);
+      }),
+    ]).then(() => {
       if (this.fsm.state.name === 'fill' || this.fsm.state.name === 'redirect') return;
       const start = this.audio.currentTime + 0.12;
       const beat = 60 / 130;
       const times = [0, 1, 2, 3].map((i) => start + i * beat);
-      this.audio.countIn(times);
+      this.audio.countIn(times, sample);
       this.sticks.countIn(times, this.countFrame());
       this.countEndsAt = start + 3 * beat + 0.15;
     });
@@ -252,6 +258,7 @@ export class App {
       meet: camera.position.clone().addScaledVector(forward, 0.6),
       right: new Vector3().setFromMatrixColumn(camera.matrixWorld, 0),
       up: new Vector3().setFromMatrixColumn(camera.matrixWorld, 1),
+      forward,
     };
   }
 
