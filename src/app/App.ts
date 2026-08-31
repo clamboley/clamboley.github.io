@@ -132,15 +132,20 @@ export class App {
     if (state.name !== 'hover') return;
     const element = KIT_BY_KEY[state.target];
 
+    // lock input right away; the fill itself waits for a live audio clock
     this.audio.unlock();
-    const start = this.audio.playFill(element.fill, (key) => KIT_BY_KEY[key].voice);
-    this.pendingHits = element.fill.hits
-      .map((hit) => ({ at: start + hit.t, key: hit.key, velocity: hit.velocity }))
-      .sort((a, b) => a.at - b.at);
-    this.fillEndsAt = start + fillDuration(element.fill);
-    this.audio.cheer(start + 0.75);
-
+    this.fillEndsAt = Infinity;
     this.fsm.trigger();
+
+    void this.audio.whenRunning().then(() => {
+      if (this.fsm.state.name !== 'fill') return;
+      const start = this.audio.playFill(element.fill, (key) => KIT_BY_KEY[key].voice);
+      this.pendingHits = element.fill.hits
+        .map((hit) => ({ at: start + hit.t, key: hit.key, velocity: hit.velocity }))
+        .sort((a, b) => a.at - b.at);
+      this.fillEndsAt = start + fillDuration(element.fill);
+      this.audio.cheer(start + 0.75);
+    });
   };
 
   private readonly resize = (): void => {

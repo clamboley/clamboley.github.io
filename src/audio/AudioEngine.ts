@@ -4,6 +4,9 @@ import { Synth } from './synth.ts';
 /** Latency margin between scheduling and the first stroke, in seconds. */
 const SCHEDULE_AHEAD = 0.06;
 
+/** Consecutive frames with an advancing clock before we trust it. */
+const CLOCK_LIVE_FRAMES = 3;
+
 interface Graph {
   ctx: AudioContext;
   synth: Synth;
@@ -36,6 +39,30 @@ export class AudioEngine {
       this.graph = { ctx, master, synth: new Synth(ctx, master) };
     }
     if (this.graph.ctx.state === 'suspended') void this.graph.ctx.resume();
+  }
+
+  /**
+   * Resolves once the audio clock is really advancing. The very first
+   * context on a machine can report `running` while the output device is
+   * still opening: `currentTime` moves by a quantum, then freezes for up to
+   * a couple of seconds. Scheduling before that would fire every stroke at
+   * once when the clock wakes up.
+   */
+  whenRunning(timeoutMs = 3000): Promise<void> {
+    const { ctx } = this.requireGraph();
+    return new Promise((resolve) => {
+      const started = performance.now();
+      let last = ctx.currentTime;
+      let advances = 0;
+      const check = (): void => {
+        const now = ctx.currentTime;
+        advances = now > last ? advances + 1 : 0;
+        last = now;
+        if (advances >= CLOCK_LIVE_FRAMES || performance.now() - started > timeoutMs) resolve();
+        else requestAnimationFrame(check);
+      };
+      requestAnimationFrame(check);
+    });
   }
 
   /** Fetches and decodes a sample so it is ready when a fill needs it. */
