@@ -18,6 +18,8 @@ if (supportsWebGL()) {
     stayOnRedirect,
   });
   app.start();
+  // debugging hook, development only
+  if (import.meta.env.DEV) (window as unknown as { app: App }).app = app;
 } else {
   showFallback();
 }

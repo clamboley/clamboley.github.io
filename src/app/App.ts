@@ -7,6 +7,8 @@ import type { KitKey } from '../kit.types.ts';
 import { createRenderer } from '../scene/createRenderer.ts';
 import { Crowd } from '../scene/Crowd.ts';
 import { DrumKit } from '../scene/DrumKit.ts';
+import { createStageEnvironment } from '../scene/Environment.ts';
+import { createPostProcessing, type PostProcessing } from '../scene/PostProcessing.ts';
 import { PovCamera } from '../scene/PovCamera.ts';
 import { createStage } from '../scene/Stage.ts';
 import { StageLights } from '../scene/StageLights.ts';
@@ -42,6 +44,7 @@ export class App {
   private readonly kit: DrumKit;
   private readonly crowd: Crowd;
   private readonly lights: StageLights;
+  private readonly post: PostProcessing;
   private readonly audio = new AudioEngine();
   private readonly look: LookInput;
   private readonly raycaster = new Raycaster();
@@ -65,14 +68,16 @@ export class App {
     this.renderer = createRenderer();
     container.appendChild(this.renderer.domElement);
 
-    this.scene.background = null;
-    this.scene.fog = new FogExp2(BACKGROUND, 0.05);
+    this.scene.fog = new FogExp2(BACKGROUND, 0.045);
+    this.scene.environment = createStageEnvironment(this.renderer);
+    this.scene.environmentIntensity = 0.45;
     this.pov = new PovCamera(motion);
     this.kit = new DrumKit(KIT);
     this.crowd = new Crowd(coarsePointer ? 140 : 260, motion);
     this.lights = new StageLights(motion);
     this.scene.add(createStage(), this.kit.root, this.crowd.root, this.lights.root);
     this.renderer.setClearColor(BACKGROUND, 1);
+    this.post = createPostProcessing(this.renderer, this.scene, this.pov.camera);
 
     this.look = new LookInput(
       (nx, ny) => {
@@ -151,6 +156,7 @@ export class App {
   private readonly resize = (): void => {
     const { innerWidth, innerHeight } = window;
     this.renderer.setSize(innerWidth, innerHeight);
+    this.post.setSize(innerWidth, innerHeight);
     this.pov.resize(innerWidth / innerHeight);
   };
 
@@ -173,7 +179,7 @@ export class App {
     this.crowd.update(dt, elapsed);
     this.lights.update(elapsed);
 
-    this.renderer.render(this.scene, this.pov.camera);
+    this.post.render(dt);
   };
 
   /** Strokes whose time has come on the audio clock drive the visuals. */

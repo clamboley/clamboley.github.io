@@ -12,7 +12,7 @@ const SHAKE_LAMBDA = 7.7;
 
 /** Seated first-person camera: bounded yaw/pitch, breathing bob, stroke shake. */
 export class PovCamera {
-  readonly camera = new PerspectiveCamera(70, 1, 0.05, 60);
+  readonly camera = new PerspectiveCamera(66, 1, 0.05, 60);
 
   private yaw = 0;
   private pitch = BASE_PITCH;

@@ -1,79 +1,92 @@
-import {
-  AdditiveBlending,
-  AmbientLight,
-  ConeGeometry,
-  DoubleSide,
-  Group,
-  Mesh,
-  MeshBasicMaterial,
-  PointLight,
-  SpotLight,
-  Vector3,
-  type Color,
-} from 'three';
+import { Group, HemisphereLight, PointLight, SpotLight, Vector3 } from 'three';
 import type { MotionPrefs } from '../util/motion.ts';
-import { legacyColor } from './colors.ts';
+import { Beam } from './Beams.ts';
 
-const SPOT_INTENSITY = 220; // candela (physically based lights)
-const BEAM_OPACITY = 0.045;
+const KIT_CENTRE = new Vector3(0, 0.85, -0.7);
 
-interface Spot {
+interface Rim {
   light: SpotLight;
-  beam: MeshBasicMaterial;
+  beam: Beam;
+  base: number;
   phase: number;
 }
 
-/** Warm key on the kit, cold wash on the crowd, two coloured back spots with fake beams. */
+interface Sweep {
+  beam: Beam;
+  from: Vector3;
+  to: Vector3;
+  phase: number;
+}
+
+/**
+ * Warm key on the kit (the only shadow caster), magenta/blue back lights
+ * with beams through the haze, sweeping movers, cold wash on the crowd.
+ */
 export class StageLights {
   readonly root = new Group();
-  private readonly spots: Spot[] = [];
+  private readonly rims: Rim[] = [];
+  private readonly sweeps: Sweep[] = [];
 
   constructor(private readonly motion: MotionPrefs) {
-    this.root.add(new AmbientLight(legacyColor(0x191430), 0.9));
+    this.root.add(new HemisphereLight(0x2a2440, 0x05050a, 0.18));
 
-    const key = new PointLight(legacyColor(0xffd9b0), 14, 0, 2);
-    key.position.set(0.4, 2.6, 0.9);
-    this.root.add(key);
+    const key = new SpotLight(0xffd6a8, 42, 0, 0.62, 0.7, 2);
+    key.position.set(0.7, 3.3, 1.1);
+    key.target.position.copy(KIT_CENTRE);
+    key.castShadow = true;
+    key.shadow.mapSize.set(1024, 1024);
+    key.shadow.bias = -0.0005;
+    key.shadow.normalBias = 0.01;
+    key.shadow.camera.near = 0.5;
+    key.shadow.camera.far = 8;
+    this.root.add(key, key.target);
 
-    const crowdWash = new PointLight(legacyColor(0x2c2c58), 60, 0, 2);
-    crowdWash.position.set(0, 4, -8);
-    this.root.add(crowdWash);
+    this.addRim(0xff2e9a, -3.4, 0);
+    this.addRim(0x2e6bff, 3.4, 2.1);
 
-    this.addSpot(legacyColor(0xd23a8c), -3.2, 0);
-    this.addSpot(legacyColor(0x3a5cd2), 3.2, 2.4);
+    // movers on the truss, slowly crossing the stage
+    for (const [x, color, phase] of [
+      [-1.6, 0xff4fb0, 0.8],
+      [1.6, 0x4f8cff, 3.1],
+    ] as const) {
+      const beam = new Beam(color, 9, 0.45, 0.1);
+      const from = new Vector3(x, 6.4, -3.6);
+      const to = new Vector3(-x * 1.8, 0, -5.5);
+      beam.aim(from, to);
+      this.root.add(beam.mesh);
+      this.sweeps.push({ beam, from, to, phase });
+    }
+
+    const wash = new PointLight(0x2438a8, 32, 0, 2);
+    wash.position.set(0, 4.5, -9);
+    this.root.add(wash);
   }
 
   update(elapsed: number): void {
     const breathe = this.motion.scale;
-    for (const spot of this.spots) {
-      const wave = Math.sin(elapsed * 1.7 + spot.phase);
-      spot.light.intensity = SPOT_INTENSITY * (1 + wave * 0.28 * breathe);
-      spot.beam.opacity = BEAM_OPACITY + wave * 0.02 * breathe;
+    for (const rim of this.rims) {
+      const wave = Math.sin(elapsed * 1.5 + rim.phase);
+      rim.light.intensity = rim.base * (1 + wave * 0.25 * breathe);
+      rim.beam.opacity = 0.11 + wave * 0.03 * breathe;
+      rim.beam.time = elapsed;
+    }
+    for (const sweep of this.sweeps) {
+      const swing = Math.sin(elapsed * 0.35 + sweep.phase) * 1.4 * breathe;
+      sweep.beam.aim(sweep.from, new Vector3(sweep.to.x + swing, sweep.to.y, sweep.to.z));
+      sweep.beam.time = elapsed;
     }
   }
 
-  private addSpot(color: Color, x: number, phase: number): void {
-    const light = new SpotLight(color, SPOT_INTENSITY, 0, 0.5, 0.55, 2);
-    light.position.set(x, 6.2, -6.5);
-    light.target.position.set(0, 0.9, -0.7);
+  private addRim(color: number, x: number, phase: number): void {
+    const base = 55;
+    const light = new SpotLight(color, base, 0, 0.3, 0.6, 2);
+    light.position.set(x, 6.4, -6.6);
+    light.target.position.set(0, 1.1, -0.8);
     this.root.add(light, light.target);
 
-    // fake volumetric beam
-    const direction = new Vector3().subVectors(light.position, light.target.position);
-    const length = direction.length();
-    const material = new MeshBasicMaterial({
-      color,
-      transparent: true,
-      opacity: BEAM_OPACITY,
-      blending: AdditiveBlending,
-      depthWrite: false,
-      side: DoubleSide,
-    });
-    const beam = new Mesh(new ConeGeometry(2.4, length, 24, 1, true), material);
-    beam.position.copy(light.position).add(light.target.position).multiplyScalar(0.5);
-    beam.quaternion.setFromUnitVectors(new Vector3(0, 1, 0), direction.normalize());
-    this.root.add(beam);
-
-    this.spots.push({ light, beam: material, phase });
+    const beam = new Beam(color, 10, 0.7, 0.11);
+    beam.aim(light.position, new Vector3(-x * 0.45, 0, -2.2));
+    this.root.add(beam.mesh);
+    this.rims.push({ light, beam, base, phase });
   }
 }
