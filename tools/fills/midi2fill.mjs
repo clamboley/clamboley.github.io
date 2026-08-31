@@ -2,7 +2,7 @@
 /**
  * Converts a MuseScore drumset MIDI export into a Fill literal for
  * src/audio/songFills.ts. Usage:
- *   node tools/fills/midi2fill.mjs tools/fills/scores/floor.mid [samples/fills/floor.wav]
+ *   node tools/fills/midi2fill.mjs tools/fills/scores/floor.mid [samples/fills/floor.wav] [--tempo 150]
  * Prints the TS snippet, plus warnings (unmapped notes, duration).
  */
 import { readFileSync } from 'node:fs';
@@ -16,9 +16,9 @@ const GM = new Map([
   [40, 'snare'],
   [41, 'floor'],
   [43, 'floor'],
-  [45, 'tom2'],
+  [45, 'floor'],
   [47, 'tom2'],
-  [48, 'tom1'],
+  [48, 'tom2'],
   [50, 'tom1'],
   [42, 'hihat'],
   [44, 'hihat'],
@@ -37,7 +37,11 @@ if (!path) {
   console.error('usage: midi2fill.mjs <file.mid> [sample-path.wav]');
   process.exit(1);
 }
-const sample = process.argv[3] ?? null;
+const args = process.argv.slice(3);
+const tempoFlag = args.indexOf('--tempo');
+const forcedBpm = tempoFlag >= 0 ? Number(args[tempoFlag + 1]) : null;
+if (tempoFlag >= 0) args.splice(tempoFlag, 2);
+const sample = args[0] ?? null;
 const data = readFileSync(path);
 
 let pos = 0;
@@ -116,6 +120,8 @@ for (let trk = 0; trk < ntrks; trk++) {
   pos = end;
 }
 
+// --tempo: trust the audio's tempo when the MIDI meta disagrees (e.g. a dotted-note marking)
+if (forcedBpm) tempos.splice(0, tempos.length, { tick: 0, usPerQuarter: 6e7 / forcedBpm });
 tempos.sort((a, b) => a.tick - b.tick);
 const toSeconds = (tick) => {
   let s = 0,

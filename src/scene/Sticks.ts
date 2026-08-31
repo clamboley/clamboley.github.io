@@ -248,17 +248,22 @@ export class Sticks {
     if (previous) this.hold.copy(previous.point).addScaledVector(UP, REBOUND_HEIGHT);
     else this.hold.copy(hand.restTip);
 
-    if (next && now >= next.at - LIFT) {
+    // dense passages (a shuffle, a roll) get a shorter, shallower lift so
+    // the stick articulates in time instead of arriving late and mushy
+    const gap = next && previous ? next.at - previous.at : Infinity;
+    const lift = Math.min(LIFT, Math.max(0.055, gap * 0.7));
+    const share = Math.max(0.35, lift / LIFT);
+    if (next && now >= next.at - lift) {
       // bring the raised stick over the target, then snap the wrist
-      const u = (now - (next.at - LIFT)) / LIFT;
+      const u = (now - (next.at - lift)) / lift;
       if (previous && now < previous.at + REBOUND) this.reboundAt(previous, now);
       else this.tip.copy(this.hold);
       this.from.copy(this.tip);
       this.dir.subVectors(hand.anchor, next.point).setY(0).normalize();
       this.cocked
         .copy(next.point)
-        .addScaledVector(UP, LIFT_HEIGHT)
-        .addScaledVector(this.dir, COCK_PULLBACK);
+        .addScaledVector(UP, LIFT_HEIGHT * share)
+        .addScaledVector(this.dir, COCK_PULLBACK * share);
       this.reach.copy(next.point);
       if (u < COCK) {
         this.tip.lerpVectors(this.from, this.cocked, MathUtils.smoothstep(u / COCK, 0, 1));

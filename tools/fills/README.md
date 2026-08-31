@@ -34,7 +34,8 @@ Pour chaque fill, deux exports depuis la même partition :
 node tools/fills/midi2fill.mjs tools/fills/scores/floor.mid samples/fills/floor.wav
 ```
 
-imprime le littéral `Fill` à coller dans `src/audio/songFills.ts`. Les chemins
+imprime le littéral `Fill` (ajouter `--tempo <bpm>` si l'export audio a été
+rendu à un autre tempo que celui inscrit dans le MIDI — cas d'un « ♩. = » en 12/8) à coller dans `src/audio/songFills.ts`. Les chemins
 de samples sont relatifs à `public/`, sans slash initial (résolus par rapport à
 la page). L'alignement WAV/MIDI suppose que les deux exports partent du même
 début de partition.
