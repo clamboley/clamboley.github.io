@@ -177,10 +177,16 @@ export class Sticks {
       hand.hold = undefined;
       hand.anchor.copy(hand.baseAnchor);
     }
+    const sorted = [...strikes].sort((a, b) => a.at - b.at);
     const last: Record<Side, number> = { left: -Infinity, right: -Infinity };
-    let alternate: Side = 'right';
-    for (const strike of [...strikes].sort((a, b) => a.at - b.at)) {
-      let side: Side = PREFERRED[strike.key] ?? alternate;
+    const take = (side: Side, strike: Strike): void => {
+      this.hand(side).strikes.push(strike);
+      last[side] = strike.at;
+    };
+    const single = (strike: Strike): void => {
+      // the right hand leads; an element's own hand wins; too fast for the
+      // same hand twice (a flam, a roll) and the other one takes over
+      let side: Side = PREFERRED[strike.key] ?? 'right';
       const other: Side = side === 'left' ? 'right' : 'left';
       if (
         strike.at - last[side] < SAME_HAND_MIN_GAP &&
@@ -188,9 +194,25 @@ export class Sticks {
       ) {
         side = other;
       }
-      this.hand(side).strikes.push(strike);
-      last[side] = strike.at;
-      alternate = side === 'left' ? 'right' : 'left';
+      take(side, strike);
+    };
+    let i = 0;
+    while (i < sorted.length) {
+      const first = sorted[i];
+      if (!first) break;
+      let j = i + 1;
+      while (j < sorted.length && sorted[j]?.at === first.at) j++;
+      const group = sorted.slice(i, j);
+      const leftmost = group.reduce((a, b) => (b.point.x < a.point.x ? b : a));
+      const rightmost = group.reduce((a, b) => (b.point.x > a.point.x ? b : a));
+      if (group.length >= 2 && leftmost !== rightmost) {
+        // both hands at once: the left hand takes the leftmost drum, uncrossed
+        take('left', leftmost);
+        take('right', rightmost);
+      } else {
+        for (const strike of group) single(strike);
+      }
+      i = j;
     }
     this.show();
   }

@@ -18,17 +18,39 @@ function fill(bpm: number, strokes: readonly Stroke[]): Fill {
  * crash), and stays short enough for the redirect to feel responsive.
  */
 export const SONG_FILLS: Readonly<Record<KitKey, Fill>> = {
-  // À propos — the heavy, wide-open groove of "When the Levee Breaks"
-  kick: fill(80, [
-    [0, 'kick', 0.95],
-    [0.5, 'kick', 0.8],
-    [1, 'snare', 1],
-    [1.75, 'kick', 0.85],
-    [2, 'kick', 0.9],
-    [2.25, 'snare', 1],
-    [2.75, 'crash', 1],
-    [2.75, 'kick', 0.95],
-  ]),
+  // À propos — a bass-drum-driven fill, from Corentin's MuseScore score
+  // (MIDI says 160 bpm, the audio export runs at 90: converted with --tempo 90)
+  kick: {
+    sample: 'samples/fills/grosse-caisse.wav',
+    hits: [
+      { t: 0, key: 'kick', velocity: 0.44 },
+      { t: 0.111, key: 'kick', velocity: 0.44 },
+      { t: 0.222, key: 'snare', velocity: 0.28 },
+      { t: 0.333, key: 'snare', velocity: 0.76 },
+      { t: 0.444, key: 'kick', velocity: 0.44 },
+      { t: 0.556, key: 'kick', velocity: 0.44 },
+      { t: 0.667, key: 'floor', velocity: 0.76 },
+      { t: 0.778, key: 'snare', velocity: 0.28 },
+      { t: 0.889, key: 'kick', velocity: 0.44 },
+      { t: 1, key: 'kick', velocity: 0.44 },
+      { t: 1.111, key: 'snare', velocity: 0.28 },
+      { t: 1.222, key: 'tom2', velocity: 0.76 },
+      { t: 1.333, key: 'kick', velocity: 0.44 },
+      { t: 1.444, key: 'kick', velocity: 0.44 },
+      { t: 1.556, key: 'snare', velocity: 0.28 },
+      { t: 1.667, key: 'floor', velocity: 0.76 },
+      { t: 1.778, key: 'kick', velocity: 0.44 },
+      { t: 1.889, key: 'kick', velocity: 0.44 },
+      { t: 2, key: 'floor', velocity: 0.76 },
+      { t: 2.111, key: 'snare', velocity: 0.28 },
+      { t: 2.222, key: 'kick', velocity: 0.44 },
+      { t: 2.333, key: 'kick', velocity: 0.44 },
+      { t: 2.444, key: 'snare', velocity: 0.28 },
+      { t: 2.556, key: 'snare', velocity: 0.76 },
+      { t: 2.667, key: 'crash', velocity: 0.63 },
+      { t: 2.667, key: 'kick', velocity: 0.44 },
+    ],
+  },
   // Mes apps — "Smells Like Teen Spirit", from Corentin's MuseScore score
   // (MIDI says 126 bpm, the audio export runs at 113: converted with --tempo 113)
   snare: {
@@ -149,22 +171,20 @@ export const SONG_FILLS: Readonly<Record<KitKey, Fill>> = {
       { t: 3.179, key: 'kick', velocity: 0.63 },
     ],
   },
-  // Contact — the tumbling snare roll of "Wipe Out"
-  crash: fill(158, [
-    [0, 'snare', 0.55],
-    [0.25, 'snare', 0.6],
-    [0.5, 'snare', 0.65],
-    [0.75, 'snare', 0.7],
-    [1, 'snare', 0.75],
-    [1.25, 'snare', 0.8],
-    [1.5, 'snare', 0.85],
-    [1.75, 'snare', 0.9],
-    [2, 'floor', 0.9],
-    [2.25, 'floor', 0.95],
-    [2.5, 'kick', 0.9],
-    [2.75, 'crash', 1],
-    [2.75, 'kick', 0.95],
-  ]),
+  // Contact — Corentin's first drum fill, from his MuseScore score
+  // (MIDI says 167 bpm, the audio export runs at 86: converted with --tempo 86)
+  crash: {
+    sample: 'samples/fills/crash.wav',
+    hits: [
+      { t: 0, key: 'snare', velocity: 0.63 },
+      { t: 0.349, key: 'tom2', velocity: 0.63 },
+      { t: 0.698, key: 'snare', velocity: 0.63 },
+      { t: 0.872, key: 'snare', velocity: 0.63 },
+      { t: 1.047, key: 'floor', velocity: 0.63 },
+      { t: 1.395, key: 'crash', velocity: 0.63 },
+      { t: 1.395, key: 'kick', velocity: 0.63 },
+    ],
+  },
   // Musique — "Take Five", from Corentin's MuseScore score
   // (MIDI says 90 bpm, the audio export runs at 149: converted with --tempo 149)
   ride: {
