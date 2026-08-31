@@ -1,4 +1,5 @@
 import { FogExp2, Raycaster, Scene, Timer, Vector2, type WebGLRenderer } from 'three';
+import { assets } from '../assets.config.ts';
 import { AudioEngine } from '../audio/AudioEngine.ts';
 import { fillDuration } from '../audio/fills.ts';
 import { LookInput } from '../input/LookInput.ts';
@@ -11,9 +12,12 @@ import { DrumKit } from '../scene/DrumKit.ts';
 import { createStageEnvironment } from '../scene/Environment.ts';
 import { createPostProcessing, type PostProcessing } from '../scene/PostProcessing.ts';
 import { PovCamera } from '../scene/PovCamera.ts';
+import { Props } from '../scene/Props.ts';
 import { createStage } from '../scene/Stage.ts';
 import { StageLights } from '../scene/StageLights.ts';
 import { Sticks, type Strike } from '../scene/Sticks.ts';
+import { Venue } from '../scene/Venue.ts';
+import { withBase } from '../util/base.ts';
 import type { Hud } from '../ui/Hud.ts';
 import type { RedirectOverlay } from '../ui/RedirectOverlay.ts';
 import { readMotionPrefs } from '../util/motion.ts';
@@ -24,11 +28,6 @@ const MAX_FRAME_DT = 0.05;
 const CENTER = new Vector2(0, 0);
 /** Events that count as a user activation for audio playback. */
 const GESTURES = ['pointerdown', 'mousedown', 'touchstart', 'keydown', 'click'] as const;
-
-/** Public asset path honouring Vite's `base` (sub-path deployments). */
-function withBase(path: string): string {
-  return `${import.meta.env.BASE_URL}${path}`;
-}
 
 interface ScheduledHit {
   at: number;
@@ -54,6 +53,8 @@ export class App {
   private readonly crowd: Crowd;
   private readonly lights: StageLights;
   private readonly sticks = new Sticks();
+  private readonly props = new Props();
+  private readonly venue = new Venue();
   private readonly post: PostProcessing;
   private readonly audio = new AudioEngine();
   private readonly look: LookInput;
@@ -91,7 +92,10 @@ export class App {
       this.crowd.root,
       this.lights.root,
       this.sticks.root,
+      this.props.root,
+      this.venue.root,
     );
+    this.loadGeneratedAssets();
     this.renderer.setClearColor(BACKGROUND, 1);
     this.post = createPostProcessing(this.renderer, this.scene, this.pov.camera);
 
@@ -107,6 +111,18 @@ export class App {
     );
 
     this.fsm.subscribe(this.onStateChange);
+  }
+
+  /** Generated models arrive after the first frame; the procedural scene stands in until then. */
+  private loadGeneratedAssets(): void {
+    const report = (what: string) => (error: unknown) => {
+      console.warn(`${what} unavailable`, error);
+    };
+    void this.crowd.loadPeople(assets.crowd.map(withBase)).catch(report('Crowd models'));
+    void this.props
+      .load(assets.props.wedges.map(withBase), withBase(assets.props.truss))
+      .catch(report('Stage props'));
+    void this.venue.load(withBase(assets.venue.stand)).catch(report('Venue'));
   }
 
   start(): void {

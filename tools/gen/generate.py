@@ -50,8 +50,8 @@ def main() -> int:
     parser.add_argument('--inputs', required=True)
     parser.add_argument('--out', required=True)
     parser.add_argument('--seed', type=int, default=1)
-    parser.add_argument('--decimate', type=int, default=400_000)
-    parser.add_argument('--texture', type=int, default=2048)
+    parser.add_argument('--decimate', default='60000,12000', help='triangle targets, one GLB per level (name.glb, name.lo.glb, …)')
+    parser.add_argument('--texture', default='2048,1024', help='texture size per level')
     parser.add_argument('--no-preprocess', action='store_true', help='images are already cut out (RGBA)')
     parser.add_argument('--resolution', default='1024_cascade')
     parser.add_argument('--envmap', default=None, help='.exr used for the preview render')
@@ -112,32 +112,38 @@ def main() -> int:
             print('preview failed:', error)
 
         t2 = time.time()
-        glb = o_voxel.postprocess.to_glb(
-            vertices=mesh.vertices,
-            faces=mesh.faces,
-            attr_volume=mesh.attrs,
-            coords=mesh.coords,
-            attr_layout=mesh.layout,
-            voxel_size=mesh.voxel_size,
-            aabb=[[-0.5, -0.5, -0.5], [0.5, 0.5, 0.5]],
-            decimation_target=args.decimate,
-            texture_size=args.texture,
-            remesh=True,
-            remesh_band=1,
-            remesh_project=0,
-            verbose=False,
-        )
-        glb_path = out / f'{stem}.glb'
-        glb.export(str(glb_path), extension_webp=True)
+        levels = list(zip(
+            [int(v) for v in args.decimate.split(',')],
+            [int(v) for v in args.texture.split(',')],
+        ))
+        suffixes = ['', '.lo', '.xlo']
+        exports = {}
+        for (target, texture), suffix in zip(levels, suffixes):
+            glb = o_voxel.postprocess.to_glb(
+                vertices=mesh.vertices,
+                faces=mesh.faces,
+                attr_volume=mesh.attrs,
+                coords=mesh.coords,
+                attr_layout=mesh.layout,
+                voxel_size=mesh.voxel_size,
+                aabb=[[-0.5, -0.5, -0.5], [0.5, 0.5, 0.5]],
+                decimation_target=target,
+                texture_size=texture,
+                remesh=True,
+                remesh_band=1,
+                remesh_project=0,
+                verbose=False,
+            )
+            glb_path = out / f'{stem}{suffix}.glb'
+            glb.export(str(glb_path), extension_webp=True)
+            exports[glb_path.name] = {'triangles': target, 'texture': texture, 'bytes': glb_path.stat().st_size}
         meta = {
             'source': file.name,
             'seed': args.seed,
             'resolution': args.resolution,
             'generation_s': round(t_gen),
             'export_s': round(time.time() - t2),
-            'glb_bytes': glb_path.stat().st_size,
-            'decimation_target': args.decimate,
-            'texture_size': args.texture,
+            'exports': exports,
         }
         (out / f'{stem}.json').write_text(json.dumps(meta, indent=2))
         print(json.dumps(meta))

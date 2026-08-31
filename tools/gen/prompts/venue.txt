@@ -1,0 +1,7 @@
+# Venue pieces: tiers, barrier, PA. Isolated objects on white so they cut out cleanly.
+tiers-front | a section of stadium stands packed with a cheering crowd at a night concert, seen from the stage at eye level, five tiers of seats, front view, people with arms raised, purple and blue stage haze, isolated on plain white background, wide shot
+tiers-relief | a dense concert crowd sculpted as a bas-relief panel, dozens of people with raised arms, seen from the front, dark clothing, subtle depth, isolated on plain white background
+crowd-block | a block of standing concert crowd seen from the front, thirty people shoulder to shoulder with arms raised, dark clothing, phone lights, rim lit magenta and blue, isolated on plain white background, 3d render style
+barrier | black steel concert crowd barrier, security barricade with a step, product photo, plain white background, centered
+line-array | a hanging line array speaker stack, black, ten cabinets, product photo, plain white background, centered
+sub-stack | a stack of two black subwoofer cabinets on a stage, product photo, plain white background, centered

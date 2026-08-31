@@ -14,6 +14,7 @@
 #   sbatch --export=ALL,BATCH=smoke[,GEN_ARGS="--seed 3"] trellis2_generate.sbatch
 set -euo pipefail
 BATCH="${BATCH:?set BATCH=<folder under inputs/>}"
+OUT="${OUT:-$BATCH}"  # output folder under outputs/, defaults to the batch name
 SHARE="${SHARE:-$HOME/vitrine-gen}"
 
 echo "job=$SLURM_JOB_ID node=$(hostname) batch=$BATCH start=$(date)"
@@ -26,7 +27,7 @@ cd "$ROOT/TRELLIS.2"
 "$ENV/bin/python" "$SHARE/tools/generate.py" \
   --pipeline "$SHARE/pipeline" \
   --inputs "$SHARE/inputs/$BATCH" \
-  --out "$SHARE/outputs/$BATCH" \
+  --out "$SHARE/outputs/$OUT" \
   --envmap "$ROOT/TRELLIS.2/assets/hdri/studio.exr" \
   ${GEN_ARGS:-}
 echo "end=$(date)"

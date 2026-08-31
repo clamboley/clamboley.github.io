@@ -21,19 +21,5 @@ export function createStage(): Group {
   pit.position.y = -STAGE_HEIGHT;
   root.add(pit);
 
-  const wedgeMaterial = new MeshStandardMaterial({ color: 0x101014, roughness: 0.85 });
-  const frontEdge = 2.5 - STAGE_DEPTH;
-  for (const [x, yaw] of [
-    [-1.6, 0.55],
-    [1.6, -0.55],
-  ] as const) {
-    const wedge = new Mesh(new BoxGeometry(0.6, 0.38, 0.45), wedgeMaterial);
-    wedge.position.set(x, 0.19, frontEdge + 0.5);
-    wedge.rotation.y = yaw;
-    wedge.rotation.x = 0.1;
-    wedge.castShadow = true;
-    root.add(wedge);
-  }
-
   return root;
 }

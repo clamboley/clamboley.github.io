@@ -1,0 +1,17 @@
+# Concert-goers for the near crowd. One person, full body, centred, plain white background, studio light.
+fan-m-fists | full body photo of a young man seen from the front, both fists raised high, shouting with joy, black band t-shirt and jeans, studio lighting, plain white background, centered, sharp
+fan-w-arms | full body photo of a young woman seen from the front, both arms raised high and open, cheering, dark red hoodie and black jeans, studio lighting, plain white background, centered, sharp
+fan-w-phone | full body photo of a woman seen from the front, holding a smartphone above her head filming, denim jacket, studio lighting, plain white background, centered, sharp
+fan-m-onearm | full body photo of a man seen from the front, one arm raised with a fist, other hand in pocket, grey hoodie, studio lighting, plain white background, centered, sharp
+fan-m-clap | full body photo of a man seen from the front, clapping with hands above his head, white t-shirt, dark jeans, studio lighting, plain white background, centered, sharp
+fan-w-horns | full body photo of a young woman seen from the front, both hands up making rock horns, black leather jacket, studio lighting, plain white background, centered, sharp
+fan-m-point | full body photo of a man seen from the front, pointing up at the stage with one arm, dark blue t-shirt, cargo shorts, studio lighting, plain white background, centered, sharp
+fan-w-cup | full body photo of a woman seen from the front, holding a drink cup up in one hand, other arm raised, dark green jacket, studio lighting, plain white background, centered, sharp
+fan-m-cap | full body photo of a man with a cap seen from the front, both arms raised, black bomber jacket, studio lighting, plain white background, centered, sharp
+fan-w-side | full body photo of a woman seen from the side, arms up clapping, dark jacket, curly hair, studio lighting, plain white background, centered, sharp
+fan-m-shoulders | full body photo of a tall man seen from the front, arms wide open, plaid shirt over a dark t-shirt, studio lighting, plain white background, centered, sharp
+fan-w-jump | full body photo of a young woman seen from the front, jumping with arms up, dark sweater, sneakers, studio lighting, plain white background, centered, sharp
+fan-m-glasses | full body photo of a man with glasses seen from the front, both hands raised, dark shirt, studio lighting, plain white background, centered, sharp
+fan-w-hat | full body photo of a woman with a beanie seen from the front, one hand raised, holding a glowing phone, dark coat, studio lighting, plain white background, centered, sharp
+fan-m-back | full body photo of a man seen from behind, both arms raised, black hoodie with hood down, studio lighting, plain white background, centered, sharp
+fan-w-back | full body photo of a woman seen from behind, arms raised and waving, dark jacket, long hair, studio lighting, plain white background, centered, sharp
