@@ -1,0 +1,17 @@
+* text=auto eol=lf
+
+# binary assets (no diff, no eol conversion)
+*.glb binary
+*.gltf binary
+*.hdr binary
+*.exr binary
+*.ktx2 binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.wav binary
+*.mp3 binary
+*.ogg binary
+*.woff binary
+*.woff2 binary

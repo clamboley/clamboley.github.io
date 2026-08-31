@@ -1,0 +1,25 @@
+# dependencies / build
+node_modules/
+dist/
+.vite/
+coverage/
+
+# env & local overrides
+.env
+.env.*
+!.env.example
+*.local
+
+# logs
+*.log
+npm-debug.log*
+
+# editors & OS
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+
+# scratch
+.scratch/

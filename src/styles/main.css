@@ -1,0 +1,268 @@
+:root {
+  --bg: #05040a;
+  --ink: #cfc8e8;
+  --ink-soft: #9d94bd;
+  --ink-mute: #6a628b;
+  --accent: #ffd66e;
+  --font: 'Space Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  touch-action: none;
+}
+
+#stage canvas {
+  display: block;
+  cursor: crosshair;
+}
+body.is-aiming #stage canvas {
+  cursor: pointer;
+}
+
+/* --- semantic navigation: hidden visually, present for crawlers / readers --- */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* --- overlays --- */
+.vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 55%, transparent 55%, rgba(0, 0, 5, 0.55) 100%);
+}
+
+.identity {
+  position: fixed;
+  top: 22px;
+  left: 26px;
+  z-index: 6;
+  pointer-events: none;
+  letter-spacing: 0.02em;
+}
+.identity-name {
+  font-size: 15px;
+  font-weight: 600;
+  opacity: 0.9;
+}
+.identity-tagline {
+  margin-top: 2px;
+  font-size: 12px;
+  opacity: 0.5;
+}
+
+#hud {
+  position: fixed;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+}
+
+.crosshair {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+  transform: translate(-50%, -50%);
+  transition:
+    transform 0.15s ease,
+    background 0.15s ease;
+}
+.crosshair.is-hot {
+  transform: translate(-50%, -50%) scale(1.7);
+  background: var(--accent);
+}
+
+.tooltip {
+  position: absolute;
+  left: 50%;
+  bottom: 14%;
+  text-align: center;
+  opacity: 0;
+  transform: translateX(-50%) translateY(8px);
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+.tooltip.is-on {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.tooltip-name {
+  font-size: 22px;
+  font-weight: 600;
+  color: #fff;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.8);
+}
+.tooltip-cta {
+  margin-top: 4px;
+  font-size: 12.5px;
+  color: #b9b0d6;
+}
+
+.hint {
+  position: absolute;
+  left: 50%;
+  bottom: 34px;
+  transform: translateX(-50%);
+  font-size: 13px;
+  color: var(--ink-soft);
+  text-align: center;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.8);
+  transition: opacity 1s ease;
+}
+.hint.is-hidden {
+  opacity: 0;
+}
+.hint-sound {
+  margin-top: 3px;
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+/* --- redirect --- */
+#redirect {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(4, 3, 10, 0);
+  pointer-events: none;
+  transition: background 0.5s ease;
+}
+#redirect.is-on {
+  background: rgba(4, 3, 10, 0.92);
+  pointer-events: auto;
+}
+.redirect-panel {
+  text-align: center;
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity 0.45s ease 0.15s,
+    transform 0.45s ease 0.15s;
+}
+#redirect.is-on .redirect-panel {
+  opacity: 1;
+  transform: none;
+}
+.redirect-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 88px;
+  height: 88px;
+  margin: 0 auto 18px;
+  border-radius: 50%;
+  font-size: 34px;
+  font-weight: 700;
+  color: #fff;
+  box-shadow: 0 0 60px rgba(255, 255, 255, 0.15);
+}
+.redirect-to {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+.redirect-destination {
+  margin: 6px 0 4px;
+  font-size: 30px;
+  font-weight: 600;
+  color: #fff;
+}
+.redirect-url {
+  font-size: 13px;
+  color: #7d74a0;
+}
+.redirect-back {
+  display: none;
+  margin-top: 22px;
+  padding: 10px 22px;
+  border: 1px solid rgba(185, 176, 214, 0.45);
+  border-radius: 99px;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+#redirect.is-staying .redirect-back {
+  display: inline-block;
+}
+.redirect-back:hover,
+.redirect-back:focus-visible {
+  background: rgba(185, 176, 214, 0.12);
+  outline: none;
+}
+
+/* --- no WebGL: the hidden navigation becomes the page --- */
+body.is-fallback {
+  overflow: auto;
+  touch-action: auto;
+}
+body.is-fallback #hud,
+body.is-fallback .vignette,
+body.is-fallback #stage {
+  display: none;
+}
+body.is-fallback .site-nav {
+  position: static;
+  width: auto;
+  height: auto;
+  clip: auto;
+  clip-path: none;
+  white-space: normal;
+  max-width: 32rem;
+  margin: 18vh auto 0;
+  padding: 0 24px;
+}
+.site-nav h1 {
+  font-size: 15px;
+  font-weight: 600;
+}
+.site-nav p {
+  margin: 6px 0 28px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+.site-nav ul {
+  list-style: none;
+}
+.site-nav li + li {
+  margin-top: 10px;
+}
+.site-nav a {
+  color: #fff;
+  font-size: 22px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.site-nav a:hover,
+.site-nav a:focus-visible {
+  color: var(--accent);
+}

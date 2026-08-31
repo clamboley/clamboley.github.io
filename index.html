@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="{{site.lang}}">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{{site.title}}</title>
+    <meta name="description" content="{{site.description}}" />
+    <link rel="canonical" href="{{site.url}}" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="{{site.title}}" />
+    <meta property="og:description" content="{{site.description}}" />
+    <meta property="og:url" content="{{site.url}}" />
+    <meta property="og:locale" content="fr_FR" />
+    <meta name="theme-color" content="#05040a" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+  </head>
+  <body>
+    <nav class="site-nav visually-hidden" aria-label="Destinations">
+      <h1>{{site.name}}</h1>
+      <p>{{site.tagline}}</p>
+      <ul>
+        {{nav.items}}
+      </ul>
+    </nav>
+
+    <main id="stage" aria-hidden="true"></main>
+
+    <div class="vignette" aria-hidden="true"></div>
+    <header class="identity" aria-hidden="true">
+      <div class="identity-name">{{site.name}}</div>
+      <div class="identity-tagline">{{site.tagline}}</div>
+    </header>
+
+    <div id="hud" aria-hidden="true">
+      <div class="crosshair"></div>
+      <div class="tooltip">
+        <div class="tooltip-name"></div>
+        <div class="tooltip-cta">clique pour jouer un fill</div>
+      </div>
+      <div class="hint">
+        Déplace la souris pour regarder autour de toi
+        <div class="hint-sound">son activé au premier clic</div>
+      </div>
+    </div>
+
+    <div id="redirect" role="status" aria-live="polite">
+      <div class="redirect-panel">
+        <div class="redirect-badge"></div>
+        <div class="redirect-to">redirection vers</div>
+        <div class="redirect-destination"></div>
+        <div class="redirect-url"></div>
+        <button class="redirect-back" type="button">Revenir sur scène</button>
+      </div>
+    </div>
+
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>
