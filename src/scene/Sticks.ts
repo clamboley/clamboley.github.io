@@ -112,17 +112,21 @@ export class Sticks {
 
   /**
    * Count-in around `meet` (kept in the middle of the gaze): the left stick
-   * stands almost vertical, leaning right; the right stick strikes it.
+   * stands almost vertical, leaning right, centred on `meet`; the right
+   * stick slaps its middle against it.
    */
   countIn(times: readonly number[], meet: Vector3): void {
     const left = this.hand('left');
     left.strikes = [];
     left.hold = {
-      butt: meet.clone().add(new Vector3(-0.1, -0.3, 0.03)),
-      tip: meet.clone().add(new Vector3(0.04, 0.18, -0.01)),
+      butt: meet.clone().add(new Vector3(-0.05, -0.21, 0.02)),
+      tip: meet.clone().add(new Vector3(0.05, 0.21, -0.02)),
     };
     const right = this.hand('right');
-    const hit = meet.clone().add(new Vector3(0.015, 0.05, 0));
+    // middle against middle: the tip overshoots the meeting point by half a
+    // stick, so the shafts cross at their centres instead of tip on tip
+    const direction = meet.clone().sub(this.hand('right').anchor).normalize();
+    const hit = meet.clone().addScaledVector(direction, LENGTH / 2);
     right.hold = undefined;
     right.strikes = times.map((at) => ({ at, key: 'snare', point: hit }));
     this.show();
