@@ -119,20 +119,20 @@ export const SONG_FILLS: Readonly<Record<KitKey, Fill>> = {
     [2.25, 'tom2', 1],
   ]),
   // Blog — a floor-tom fill, from Corentin's MuseScore score
-  // (MIDI says 57 bpm, the audio export runs at 125: converted with --tempo 125; sticking pending)
+  // (MIDI says 57 bpm, the audio export runs at 125: --tempo 125; sticking from Corentin, --sticking BRLRL)
   floor: {
     sample: 'samples/fills/floor-tom.wav',
     hits: [
-      { t: 0, key: 'floor', velocity: 0.63 },
-      { t: 0, key: 'hihat', velocity: 0.63 },
+      { t: 0, key: 'floor', velocity: 0.63, hand: 'right' },
+      { t: 0, key: 'hihat', velocity: 0.63, hand: 'left' },
       { t: 0.24, key: 'kick', velocity: 0.63 },
       { t: 0.48, key: 'kick', velocity: 0.63 },
-      { t: 0.72, key: 'floor', velocity: 0.63 },
-      { t: 0.96, key: 'hihat', velocity: 0.63 },
+      { t: 0.72, key: 'floor', velocity: 0.63, hand: 'right' },
+      { t: 0.96, key: 'hihat', velocity: 0.63, hand: 'left' },
       { t: 1.2, key: 'kick', velocity: 0.63 },
       { t: 1.44, key: 'kick', velocity: 0.63 },
-      { t: 1.68, key: 'floor', velocity: 0.63 },
-      { t: 1.92, key: 'snare', velocity: 0.76 },
+      { t: 1.68, key: 'floor', velocity: 0.63, hand: 'right' },
+      { t: 1.92, key: 'snare', velocity: 0.76, hand: 'left' },
     ],
   },
   // CV — the "Rosanna" half-time shuffle, from Corentin's MuseScore score
