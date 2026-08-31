@@ -23,3 +23,6 @@ Thumbs.db
 
 # scratch
 .scratch/
+
+# tsc -b incremental state
+*.tsbuildinfo
