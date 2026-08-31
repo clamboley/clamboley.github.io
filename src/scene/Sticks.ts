@@ -14,6 +14,14 @@ const ARM_SHARE = 0.45; // how far the hand travels towards what it reaches for
 const FADE_LAMBDA = 22;
 const UP = new Vector3(0, 1, 0);
 
+/** Camera basis handed to the count-in so the pose follows the view. */
+export interface CountFrame {
+  /** Point straight ahead of the eyes where the sticks meet. */
+  meet: Vector3;
+  right: Vector3;
+  up: Vector3;
+}
+
 export interface Strike {
   /** Absolute time on the audio clock. */
   at: number;
@@ -111,22 +119,32 @@ export class Sticks {
   }
 
   /**
-   * Count-in around `meet` (kept in the middle of the gaze): the left stick
-   * stands almost vertical, leaning right, centred on `meet`; the right
-   * stick slaps its middle against it.
+   * Count-in in the middle of the visitor's field of view: the left stick
+   * stands almost vertical in camera space, leaning right, centred on
+   * `meet`; the right stick slaps its middle against it. Everything is
+   * expressed in the camera basis so the gesture reads the same wherever
+   * the visitor is looking.
    */
-  countIn(times: readonly number[], meet: Vector3): void {
+  countIn(times: readonly number[], frame: CountFrame): void {
+    const { meet, right: r, up } = frame;
     const left = this.hand('left');
     left.strikes = [];
     left.hold = {
-      butt: meet.clone().add(new Vector3(-0.05, -0.21, 0.02)),
-      tip: meet.clone().add(new Vector3(0.05, 0.21, -0.02)),
+      butt: meet.clone().addScaledVector(r, -0.05).addScaledVector(up, -0.21),
+      tip: meet.clone().addScaledVector(r, 0.05).addScaledVector(up, 0.21),
     };
     const right = this.hand('right');
-    // middle against middle: the tip overshoots the meeting point by half a
-    // stick, so the shafts cross at their centres instead of tip on tip
-    const direction = meet.clone().sub(this.hand('right').anchor).normalize();
-    const hit = meet.clone().addScaledVector(direction, LENGTH / 2);
+    // middle against middle: `pose` puts the tip on the target with the butt
+    // towards the hand, so overshoot by half a stick along the axis the
+    // stick will actually have at impact (solved by fixed point, since the
+    // hand itself follows the target)
+    const hit = meet.clone();
+    const handAt = new Vector3();
+    for (let i = 0; i < 3; i++) {
+      handAt.copy(hit).sub(right.restTip).multiplyScalar(ARM_SHARE).add(right.anchor);
+      this.dir.subVectors(hit, handAt).normalize();
+      hit.copy(meet).addScaledVector(this.dir, LENGTH / 2);
+    }
     right.hold = undefined;
     right.strikes = times.map((at) => ({ at, key: 'snare', point: hit }));
     this.show();
