@@ -10,7 +10,7 @@ if [ ! -x "$ENV/bin/python" ]; then
   echo "[$(date +%H:%M:%S)] restoring the environment into $ROOT"
   mkdir -p "$ENV"
   tar -xzf "$SHARE/env.tar.gz" -C "$ENV"
-  "$ENV/bin/conda-unpack"
+  "$ENV/bin/python" "$ENV/bin/conda-unpack"  # its shebang wants a "python" on PATH
   tar -C "$ROOT" --use-compress-program="$ENV/bin/unzstd" -xf "$SHARE/work.tar.zst"
   echo "[$(date +%H:%M:%S)] environment restored"
 fi
