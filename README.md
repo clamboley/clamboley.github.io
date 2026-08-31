@@ -37,6 +37,20 @@ Node ≥ 22.12 (`.nvmrc` → 24).
 | Fills (timeline de frappes) et audio               | `src/audio/`                                              |
 | HUD, écran de redirection, fallback sans WebGL     | `src/ui/`                                                 |
 
+## Rendu (étape 2)
+
+- Kit procédural piloté par la config (coques clearcoat « sparkle », cercles/tirants/coquilles chrome,
+  cymbales lathées anisotropes, pieds tripodes, pédale) — `src/scene/DrumKit.ts`, `materials.ts`, `textures.ts`.
+- Env map **procédurale** (rig de PAR chauds, contre-jours magenta/bleu) rendue en PMREM au démarrage,
+  aucun asset à télécharger — `src/scene/Environment.ts`.
+- Éclairage : clé chaude avec ombres, contre-jours colorés, faisceaux volumétriques additifs qui balaient
+  la scène, wash bleu sur la foule — `src/scene/StageLights.ts`, `Beams.ts`.
+- Post-processing (`postprocessing`) : bloom, tone mapping AgX, SMAA, grain, vignette — `src/scene/PostProcessing.ts`.
+- En dev, l'app est exposée sur `window.app` pour inspecter la scène depuis la console.
+
+Les kits Sketchfab CC-BY repérés pour remplacer le kit procédural (téléchargement avec un compte) :
+« Burgundy Drum Kit by Opal » (Glowbox 3D) et « Drum Kit » (art.katja).
+
 ## Conventions
 
 - Commits sur `main`, messages [Conventional Commits](https://www.conventionalcommits.org/), un tag par étape validée.
