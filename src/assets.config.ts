@@ -15,11 +15,17 @@ export const assets = {
   /** One entry per person variant; the near rows are dealt round-robin across them. */
   crowd: [
     fan('fan-arms-up-s1'),
-    fan('fan-arms-up-s2'),
     fan('fan-phone-s1'),
-    fan('fan-phone-s2'),
-    fan('fan-side-s1'),
-    fan('fan-side-s2'),
+    fan('fan-m-fists-s1'),
+    fan('fan-w-arms-s1'),
+    fan('fan-m-clap-s2'),
+    fan('fan-w-horns-s1'),
+    fan('fan-m-cap-s1'),
+    fan('fan-m-shoulders-s1'),
+    fan('fan-w-cup-s1'),
+    fan('fan-m-point-s1'),
+    fan('fan-m-glasses-s2'),
+    fan('fan-m-onearm-s1'),
   ],
   /** Festival lighting tower out in the field; undefined until generated. */
   tower: 'models/props/tower-truss-s1.lo.glb' as string | undefined,
@@ -28,8 +34,8 @@ export const assets = {
   /** Individual people stop here; beyond, blocks of thirty fill the pit. */
   crowdIndividualDepth: 6,
   crowdBlocks: [
-    { hi: 'models/venue/crowd-block-s1.lo.glb', lo: 'models/venue/crowd-block-s1.lo.glb' },
-    { hi: 'models/venue/crowd-block-s2.lo.glb', lo: 'models/venue/crowd-block-s2.lo.glb' },
+    { hi: 'models/venue/crowd-block-s1.glb', lo: 'models/venue/crowd-block-s1.lo.glb' },
+    { hi: 'models/venue/crowd-block-s2.glb', lo: 'models/venue/crowd-block-s2.lo.glb' },
   ] as CrowdVariant[],
   props: {
     wedges: ['models/props/stage-monitor-s1.lo.glb', 'models/props/stage-monitor-s2.lo.glb'],
