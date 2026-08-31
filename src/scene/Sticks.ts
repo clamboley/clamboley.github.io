@@ -11,12 +11,15 @@ import type { KitKey } from '../kit.types.ts';
 import { merge } from './geometry.ts';
 
 const LENGTH = 0.41; // metres, a 5A stick
-const LIFT = 0.16; // seconds between the start of the swing and the contact
-const LIFT_HEIGHT = 0.16; // metres, apex of the swing above the target
+const LIFT = 0.17; // seconds between the start of the swing and the contact
+const LIFT_HEIGHT = 0.16; // metres, the raised tip above the target before the wrist snaps
+const COCK = 0.65; // share of LIFT spent bringing the raised stick over the target; the rest is the snap
+const COCK_PULLBACK = 0.06; // metres, raised tip held slightly towards the hand so the stick tilts up
 const REBOUND = 0.11; // seconds, bounce after the contact
 const REBOUND_HEIGHT = 0.05;
 const RETURN = 0.5; // seconds to come back to rest after the last stroke
 const SAME_HAND_MIN_GAP = 0.09; // seconds; faster than that, the other hand takes over
+const ARM_SHARE = 0.45; // how far the hand travels towards what it reaches for
 const FADE_LAMBDA = 22;
 const UP = new Vector3(0, 1, 0);
 
@@ -64,7 +67,8 @@ function stickGroup(material: MeshStandardMaterial): Group {
 
 /**
  * First-person drumsticks: invisible at rest, they fade in on a click and
- * play the fill's timeline — swing, contact, rebound — on the audio clock.
+ * play the fill's timeline on the audio clock. A stroke brings the raised
+ * stick over the target, snaps the wrist, rebounds.
  */
 export class Sticks {
   readonly root = new Group();
@@ -80,9 +84,13 @@ export class Sticks {
 
   // scratch vectors
   private readonly tip = new Vector3();
+  /** Point the hand is reaching for; the tip moves relative to it. */
+  private readonly reach = new Vector3();
   private readonly from = new Vector3();
   private readonly hold = new Vector3();
+  private readonly cocked = new Vector3();
   private readonly dir = new Vector3();
+  private readonly butt = new Vector3();
 
   constructor() {
     this.hands = [
@@ -103,7 +111,7 @@ export class Sticks {
     ];
     for (const hand of this.hands) {
       this.root.add(hand.stick);
-      this.pose(hand, hand.restTip);
+      this.pose(hand, hand.restTip, hand.restTip);
     }
     this.root.visible = false;
   }
@@ -149,7 +157,10 @@ export class Sticks {
       this.root.visible = false;
       return;
     }
-    for (const hand of this.hands) this.pose(hand, this.tipAt(hand, now));
+    for (const hand of this.hands) {
+      this.follow(hand, now);
+      this.pose(hand, this.tip, this.reach);
+    }
   }
 
   private hand(side: Side): Hand {
@@ -158,8 +169,8 @@ export class Sticks {
     return hand;
   }
 
-  /** Where the tip is at `now`, following the hand's strokes. */
-  private tipAt(hand: Hand, now: number): Vector3 {
+  /** Sets `tip` and `reach` for `now`, following the hand's strokes. */
+  private follow(hand: Hand, now: number): void {
     const { strikes } = hand;
     let previous: Strike | undefined;
     let next: Strike | undefined;
@@ -171,42 +182,67 @@ export class Sticks {
       }
     }
 
-    // where the hand waits after its previous stroke (or rests)
+    // where the tip waits after its previous stroke (or rests)
     if (previous) this.hold.copy(previous.point).addScaledVector(UP, REBOUND_HEIGHT);
     else this.hold.copy(hand.restTip);
 
     if (next && now >= next.at - LIFT) {
+      // bring the raised stick over the target, then snap the wrist
       const u = (now - (next.at - LIFT)) / LIFT;
-      this.from.copy(
-        previous && now < previous.at + REBOUND ? this.reboundAt(previous, now) : this.hold,
-      );
-      const ease = u * u;
-      this.tip.lerpVectors(this.from, next.point, ease);
-      this.tip.addScaledVector(UP, Math.sin(u * Math.PI) * LIFT_HEIGHT * (1 - ease * 0.5));
-      return this.tip;
+      if (previous && now < previous.at + REBOUND) this.reboundAt(previous, now);
+      else this.tip.copy(this.hold);
+      this.from.copy(this.tip);
+      this.dir.subVectors(hand.anchor, next.point).setY(0).normalize();
+      this.cocked
+        .copy(next.point)
+        .addScaledVector(UP, LIFT_HEIGHT)
+        .addScaledVector(this.dir, COCK_PULLBACK);
+      this.reach.copy(next.point);
+      if (u < COCK) {
+        this.tip.lerpVectors(this.from, this.cocked, MathUtils.smoothstep(u / COCK, 0, 1));
+      } else {
+        const v = (u - COCK) / (1 - COCK);
+        this.tip.lerpVectors(this.cocked, next.point, v * v);
+      }
+      return;
     }
-    if (previous && now < previous.at + REBOUND) return this.reboundAt(previous, now);
+    if (previous && now < previous.at + REBOUND) {
+      this.reach.copy(previous.point);
+      this.reboundAt(previous, now);
+      return;
+    }
     if (previous && !next) {
-      const u = MathUtils.clamp((now - previous.at - REBOUND) / RETURN, 0, 1);
-      return this.tip.lerpVectors(this.hold, hand.restTip, MathUtils.smoothstep(u, 0, 1));
+      const u = MathUtils.smoothstep(
+        MathUtils.clamp((now - previous.at - REBOUND) / RETURN, 0, 1),
+        0,
+        1,
+      );
+      this.reach.lerpVectors(previous.point, hand.restTip, u);
+      this.tip.lerpVectors(this.hold, hand.restTip, u);
+      return;
     }
-    return this.tip.copy(this.hold);
+    this.reach.copy(previous ? previous.point : hand.restTip);
+    this.tip.copy(this.hold);
   }
 
-  private reboundAt(strike: Strike, now: number): Vector3 {
+  private reboundAt(strike: Strike, now: number): void {
     const v = (now - strike.at) / REBOUND;
-    return this.tip
-      .copy(strike.point)
-      .addScaledVector(UP, Math.sin(v * Math.PI * 0.5) * REBOUND_HEIGHT);
+    this.tip.copy(strike.point).addScaledVector(UP, Math.sin(v * Math.PI * 0.5) * REBOUND_HEIGHT);
   }
 
-  /** Places the stick so its tip is at `tip`, its butt reaching back towards the hand. */
-  private pose(hand: Hand, tip: Vector3): void {
-    // the hand follows the tip part of the way (arm reach)
-    const handPosition = this.dir.copy(tip).sub(hand.restTip).multiplyScalar(0.45).add(hand.anchor);
-    const direction = handPosition.sub(tip).normalize(); // from tip back to the hand
-    const butt = direction.multiplyScalar(LENGTH).add(tip);
-    hand.stick.position.copy(butt);
+  /**
+   * Places the stick with its tip at `tip`. The hand goes part of the way
+   * towards `reach` (the arm), so a stroke reads as the wrist snapping the
+   * tip down rather than the whole arm thrusting.
+   */
+  private pose(hand: Hand, tip: Vector3, reach: Vector3): void {
+    const handPosition = this.dir
+      .copy(reach)
+      .sub(hand.restTip)
+      .multiplyScalar(ARM_SHARE)
+      .add(hand.anchor);
+    this.butt.subVectors(handPosition, tip).normalize().multiplyScalar(LENGTH).add(tip);
+    hand.stick.position.copy(this.butt);
     hand.stick.lookAt(tip);
   }
 }
