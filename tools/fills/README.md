@@ -41,13 +41,13 @@ début de partition.
 
 ## Correspondance General MIDI
 
-| GM | Élément |
-| --- | --- |
-| 35, 36 | kick |
-| 37, 38, 40 | snare |
-| 48, 50 | tom1 |
-| 45, 47 | tom2 |
-| 41, 43 | floor |
-| 42, 44, 46 | hihat |
-| 49, 52, 55, 57 | crash |
-| 51, 53, 59 | ride |
+| GM             | Élément |
+| -------------- | ------- |
+| 35, 36         | kick    |
+| 37, 38, 40     | snare   |
+| 48, 50         | tom1    |
+| 45, 47         | tom2    |
+| 41, 43         | floor   |
+| 42, 44, 46     | hihat   |
+| 49, 52, 55, 57 | crash   |
+| 51, 53, 59     | ride    |
