@@ -111,7 +111,7 @@ for (let trk = 0; trk < ntrks; trk++) {
         if ((b & 0x0f) !== 9) skippedChannels.add((b & 0x0f) + 1);
         else {
           const key = GM.get(d1);
-          if (key) notes.push({ tick, key, velocity: d2 / 127 });
+          if (key) notes.push({ tick, key, velocity: d2 / 127, foot: d1 === 44 });
           else unmapped.set(d1, (unmapped.get(d1) ?? 0) + 1);
         }
       }
@@ -138,6 +138,7 @@ const hits = notes
   .map((n) => ({
     t: Math.round(toSeconds(n.tick) * 1000) / 1000,
     key: n.key,
+    foot: n.foot,
     velocity: Math.max(0.05, Math.round(n.velocity * 100) / 100),
   }))
   .sort((a, b) => a.t - b.t || a.key.localeCompare(b.key));
@@ -158,7 +159,8 @@ console.error(
 );
 
 const lines = hits.map(
-  (h) => `    { t: ${String(h.t)}, key: '${h.key}', velocity: ${String(h.velocity)} },`,
+  (h) =>
+    `    { t: ${String(h.t)}, key: '${h.key}', velocity: ${String(h.velocity)}${h.foot ? ', foot: true' : ''} },`,
 );
 console.log(
   `{\n  sample: ${sample ? `'${sample}'` : 'null'},\n  hits: [\n${lines.join('\n')}\n  ],\n}`,
