@@ -48,7 +48,10 @@ interface Hand {
 
 /** Elements a hand naturally owns; everything else alternates. */
 const PREFERRED: Partial<Record<KitKey, Side>> = {
-  hihat: 'left',
+  // crossed position, as played on a right-handed kit: right hand over to
+  // the hats, left hand on the snare (flams still alternate via the gap rule)
+  hihat: 'right',
+  snare: 'left',
   crash: 'left',
   ride: 'right',
   floor: 'right',
