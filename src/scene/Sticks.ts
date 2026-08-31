@@ -38,6 +38,8 @@ interface Hand {
   stick: Group;
   /** Where the hand hovers between strokes. */
   anchor: Vector3;
+  /** The built-in anchor; `anchor` itself may be overridden for the count-in. */
+  baseAnchor: Vector3;
   restTip: Vector3;
   strikes: Strike[];
   /** Fixed pose (butt → tip), used while this stick is held still. */
@@ -94,6 +96,10 @@ export class Sticks {
   private readonly cocked = new Vector3();
   private readonly dir = new Vector3();
   private readonly butt = new Vector3();
+  private readonly pivot = new Vector3();
+  private readonly arcFrom = new Vector3();
+  private readonly arcTo = new Vector3();
+  private readonly axisV = new Vector3();
 
   constructor() {
     this.hands = [
@@ -101,6 +107,7 @@ export class Sticks {
         side: 'left',
         stick: stickGroup(this.material),
         anchor: new Vector3(-0.3, 0.98, -0.22),
+        baseAnchor: new Vector3(-0.3, 0.98, -0.22),
         restTip: new Vector3(-0.42, 1.02, -0.5),
         strikes: [],
       },
@@ -108,6 +115,7 @@ export class Sticks {
         side: 'right',
         stick: stickGroup(this.material),
         anchor: new Vector3(0.24, 0.96, -0.2),
+        baseAnchor: new Vector3(0.24, 0.96, -0.2),
         restTip: new Vector3(0.02, 0.9, -0.55),
         strikes: [],
       },
@@ -128,6 +136,7 @@ export class Sticks {
    */
   countIn(times: readonly number[], frame: CountFrame): void {
     const { meet, right: r, up, forward } = frame;
+    for (const hand of this.hands) hand.anchor.copy(hand.baseAnchor);
     const left = this.hand('left');
     left.strikes = [];
     left.hold = {
@@ -135,20 +144,24 @@ export class Sticks {
       tip: meet.clone().addScaledVector(r, 0.05).addScaledVector(up, 0.21),
     };
     const right = this.hand('right');
-    // middle against middle: `pose` puts the tip on the target with the butt
-    // towards the hand, so overshoot by half a stick along the axis the
-    // stick will actually have at impact (solved by fixed point, since the
-    // hand itself follows the target)
     // the right stick passes just in front of the left one and stops a touch
     // higher, so the shafts rest against each other instead of interpenetrating
     const contact = meet.clone().addScaledVector(forward, -0.013).addScaledVector(up, 0.006);
-    const hit = contact.clone();
-    const handAt = new Vector3();
-    for (let i = 0; i < 3; i++) {
-      handAt.copy(hit).sub(right.restTip).multiplyScalar(ARM_SHARE).add(right.anchor);
-      this.dir.subVectors(hit, handAt).normalize();
-      hit.copy(contact).addScaledVector(this.dir, LENGTH / 2);
-    }
+    // axis the stick would naturally take from the resting hand, straightened
+    // 20% towards vertical for a more upright strike
+    const handAt = new Vector3()
+      .copy(contact)
+      .sub(right.restTip)
+      .multiplyScalar(ARM_SHARE)
+      .add(right.baseAnchor);
+    const axis = new Vector3().subVectors(contact, handAt).normalize().lerp(up, 0.2).normalize();
+    const hit = contact.clone().addScaledVector(axis, LENGTH / 2);
+    // park the hand at the butt of that axis for the count, so the stick
+    // actually takes it at impact (play() restores the anchor)
+    right.anchor
+      .copy(contact)
+      .addScaledVector(axis, -LENGTH / 2)
+      .sub(new Vector3().copy(hit).sub(right.restTip).multiplyScalar(ARM_SHARE));
     right.hold = undefined;
     right.strikes = times.map((at) => ({ at, key: 'snare', point: hit }));
     this.show();
@@ -159,6 +172,7 @@ export class Sticks {
     for (const hand of this.hands) {
       hand.strikes = [];
       hand.hold = undefined;
+      hand.anchor.copy(hand.baseAnchor);
     }
     const last: Record<Side, number> = { left: -Infinity, right: -Infinity };
     let alternate: Side = 'right';
@@ -247,7 +261,7 @@ export class Sticks {
         this.tip.lerpVectors(this.from, this.cocked, MathUtils.smoothstep(u / COCK, 0, 1));
       } else {
         const v = (u - COCK) / (1 - COCK);
-        this.tip.lerpVectors(this.cocked, next.point, v * v);
+        this.wristArc(hand, next.point, v * v);
       }
       return;
     }
@@ -273,6 +287,31 @@ export class Sticks {
   private reboundAt(strike: Strike, now: number): void {
     const v = (now - strike.at) / REBOUND;
     this.tip.copy(strike.point).addScaledVector(UP, Math.sin(v * Math.PI * 0.5) * REBOUND_HEIGHT);
+  }
+
+  /**
+   * Snap phase as a wrist stroke: the hand stays put and the tip sweeps an
+   * arc around it, instead of sliding down a straight chord.
+   */
+  private wristArc(hand: Hand, target: Vector3, u: number): void {
+    this.pivot.copy(target).sub(hand.restTip).multiplyScalar(ARM_SHARE).add(hand.anchor);
+    this.arcFrom.copy(this.cocked).sub(this.pivot);
+    this.arcTo.copy(target).sub(this.pivot);
+    const from = this.arcFrom.length();
+    const to = this.arcTo.length();
+    this.arcFrom.divideScalar(from);
+    this.arcTo.divideScalar(to);
+    const angle = Math.acos(MathUtils.clamp(this.arcFrom.dot(this.arcTo), -1, 1));
+    if (angle < 1e-3) {
+      this.tip.lerpVectors(this.cocked, target, u);
+      return;
+    }
+    this.axisV.crossVectors(this.arcFrom, this.arcTo).normalize();
+    this.tip
+      .copy(this.arcFrom)
+      .applyAxisAngle(this.axisV, angle * u)
+      .multiplyScalar(from + (to - from) * u)
+      .add(this.pivot);
   }
 
   /** Places the stick exactly from butt to tip (held still). */
