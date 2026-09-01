@@ -91,6 +91,12 @@ export class Crowd {
 
   private readonly individualDepth: number;
   private readonly blocks = new Group();
+  /** Far blocks meshes and their full instance counts, for `setReach`. */
+  private readonly farBlocks: { mesh: InstancedMesh; total: number }[] = [];
+  private reach = 1;
+  /** Detailed front-row meshes and their light twins, for `setDetail`. */
+  private readonly detailPairs: { hi: InstancedMesh; lo: InstancedMesh }[] = [];
+  private detail = true;
 
   /** How far the blocks of people go, metres. */
   private readonly pitDepth: number;
@@ -118,6 +124,8 @@ export class Crowd {
       });
     }
 
+    // nearest first: trimming an instance count then drops the farthest people
+    this.people.sort((a, b) => b.z - a.z);
     const plainPeople = this.people.filter((p) => !p.arms);
     const armsPeople = this.people.filter((p) => p.arms);
     this.plain = new InstancedMesh(silhouette(false), this.silhouetteMaterial, plainPeople.length);
@@ -161,6 +169,26 @@ export class Crowd {
     this.root.add(this.blocks);
   }
 
+  /** Detailed people in the front rows, or their 6k-triangle twins. */
+  setDetail(on: boolean): void {
+    this.detail = on;
+    for (const { hi, lo } of this.detailPairs) {
+      hi.visible = on;
+      lo.visible = !on;
+    }
+  }
+
+  /** Keeps only the nearest share of the crowd, people and far blocks alike (a weak GPU's relief). */
+  setReach(share: number): void {
+    this.reach = share;
+    for (const { mesh, total } of this.farBlocks) {
+      mesh.count = Math.max(1, Math.round(total * share));
+    }
+    for (const variant of this.variants) {
+      variant.mesh.count = Math.max(1, Math.round(variant.people.length * share));
+    }
+  }
+
   /**
    * Blocks of thirty people fill the pit beyond the individual rows and along
    * the sides, instanced per variant, every block turned towards the stage.
@@ -184,8 +212,8 @@ export class Crowd {
         slots.push({ x: x + (random() - 0.5) * 0.6, z: z + (random() - 0.5) * 0.5 });
       }
     }
-    const place = (model: LoadedModel, mine: { x: number; z: number }[]) => {
-      if (mine.length === 0) return;
+    const place = (model: LoadedModel, mine: { x: number; z: number }[]): InstancedMesh | null => {
+      if (mine.length === 0) return null;
       const mesh = new InstancedMesh(model.geometry, model.material, mine.length);
       model.material.envMapIntensity = 0.3;
       const scale = BLOCK_HEIGHT / model.size.y;
@@ -204,15 +232,26 @@ export class Crowd {
       });
       mesh.instanceMatrix.needsUpdate = true;
       this.blocks.add(mesh);
+      return mesh;
     };
     models.forEach((model, index) => {
       const mine = slots.filter((_, i) => i % models.length === index);
       const nearBlock = (slot: { z: number }) => slot.z > PIT_FRONT - BLOCK_DETAIL_DEPTH;
-      place(model.hi, mine.filter(nearBlock));
-      place(
+      const nearSlots = mine.filter(nearBlock);
+      const nearHi = place(model.hi, nearSlots);
+      const nearLo = place(model.lo, nearSlots);
+      if (nearHi && nearLo) {
+        nearHi.visible = this.detail;
+        nearLo.visible = !this.detail;
+        this.detailPairs.push({ hi: nearHi, lo: nearLo });
+      }
+      const far = place(
         model.lo,
         mine.filter((slot) => !nearBlock(slot)),
       );
+      // rows were generated front to back: trimming the count drops the farthest
+      if (far) this.farBlocks.push({ mesh: far, total: far.count });
+      if (far && this.reach < 1) far.count = Math.max(1, Math.round(far.count * this.reach));
     });
   }
 
@@ -234,7 +273,15 @@ export class Crowd {
     const near = (person: Person) => person.z > PIT_FRONT - detailDistance;
     models.forEach((model, index) => {
       const people = this.people.filter((_, i) => i % models.length === index);
-      this.addVariant(model.hi, people.filter(near));
+      const front = people.filter(near);
+      const hi = this.addVariant(model.hi, front);
+      // the same front rows with the light model, shown when the budget says so
+      const lo = this.addVariant(model.lo, front);
+      if (hi && lo) {
+        lo.visible = this.detail ? false : true;
+        hi.visible = this.detail;
+        this.detailPairs.push({ hi, lo });
+      }
       this.addVariant(
         model.lo,
         people.filter((person) => !near(person)),
@@ -262,6 +309,7 @@ export class Crowd {
       this.placeSilhouettes(this.arms, elapsed, bob, sway);
     }
     for (const variant of this.variants) {
+      if (!variant.mesh.visible) continue;
       variant.material.opacity = this.swap;
       variant.material.transparent = this.swap < 0.995;
       this.placeVariant(variant, elapsed, bob, sway);
@@ -272,8 +320,8 @@ export class Crowd {
     this.phones.size = 0.08 + Math.sin(elapsed * 3.3) * 0.02 * flicker;
   }
 
-  private addVariant(model: LoadedModel, people: Person[]): void {
-    if (people.length === 0) return;
+  private addVariant(model: LoadedModel, people: Person[]): InstancedMesh | null {
+    if (people.length === 0) return null;
     const mesh = new InstancedMesh(model.geometry, model.material, people.length);
     mesh.instanceMatrix.setUsage(DynamicDrawUsage);
     model.material.envMapIntensity = 0.35;
@@ -285,6 +333,8 @@ export class Crowd {
       unitHeight: model.size.y,
       feetOffset: -model.bounds.min.y,
     });
+    if (this.reach < 1) mesh.count = Math.max(1, Math.round(people.length * this.reach));
+    return mesh;
   }
 
   private placeSilhouettes(mesh: InstancedMesh, elapsed: number, bob: number, sway: number): void {

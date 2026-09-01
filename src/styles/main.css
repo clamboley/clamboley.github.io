@@ -326,3 +326,18 @@ body.is-menu .identity {
 .site-nav a:focus-visible {
   color: var(--accent);
 }
+
+/* --- ?stats: adaptive budget read-out --- */
+.stats {
+  position: fixed;
+  right: 12px;
+  bottom: 10px;
+  z-index: 40;
+  padding: 4px 8px;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 11px;
+  color: var(--ink-soft);
+  background: rgba(5, 4, 10, 0.6);
+  border-radius: 3px;
+  pointer-events: none;
+}

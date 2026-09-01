@@ -26,9 +26,37 @@ import { Menu } from '../ui/Menu.ts';
 import type { RedirectOverlay } from '../ui/RedirectOverlay.ts';
 import { readMotionPrefs } from '../util/motion.ts';
 import type { QualityProfile } from '../util/quality.ts';
+import { Governor, type GovernorLevels } from './Governor.ts';
 import { StateMachine, type State } from './StateMachine.ts';
 
 const BACKGROUND = 0x05040a;
+const BUDGET_KEY = 'vitrine:budget';
+
+/** Where the adaptive budget ended up last time on this device. */
+function readStoredRung(): number {
+  try {
+    const value = Number(localStorage.getItem(BUDGET_KEY));
+    return Number.isInteger(value) && value >= 0 ? value : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function storeRung(rung: number): void {
+  try {
+    localStorage.setItem(BUDGET_KEY, String(rung));
+  } catch {
+    // private mode or storage blocked: nothing to remember
+  }
+}
+
+/** `?stats`: a small read-out of the adaptive budget, for tuning. */
+function createStats(): HTMLElement {
+  const el = document.createElement('div');
+  el.className = 'stats';
+  document.body.appendChild(el);
+  return el;
+}
 const MAX_FRAME_DT = 0.05;
 const CENTER = new Vector2(0, 0);
 /** Events that count as a user activation for audio playback. */
@@ -67,6 +95,10 @@ export class App {
   private readonly look: LookInput;
   private readonly keyboard: KeyboardInput;
   private readonly menu: Menu;
+  private readonly governor: Governor;
+  private readonly stats: HTMLElement | null;
+  private statsTimer = 0;
+  private statsFrames = 0;
   /** Element aimed through the keyboard focus, overriding the crosshair. */
   private keyboardAim: KitKey | null = null;
   private readonly raycaster = new Raycaster();
@@ -166,7 +198,24 @@ export class App {
         : 'Déplace la souris pour regarder autour de toi · Tab parcourt les fûts, Entrée joue, Échap liste les liens',
     );
 
+    // adaptive budget: start where the last visit ended up on this device
+    this.governor = new Governor((levels, rung) => {
+      this.applyLevels(levels);
+      storeRung(rung);
+    }, readStoredRung());
+    this.applyLevels(this.governor.levels);
+    this.stats = new URLSearchParams(location.search).has('stats') ? createStats() : null;
+
     this.fsm.subscribe(this.onStateChange);
+  }
+
+  /** The governor's verdict: render scale and crowd reach. */
+  private applyLevels(levels: GovernorLevels): void {
+    const base = Math.min(window.devicePixelRatio, this.quality.pixelRatioMax);
+    this.renderer.setPixelRatio(base * levels.renderScale);
+    this.post.setSize(window.innerWidth, window.innerHeight);
+    this.crowd.setDetail(levels.detail);
+    this.crowd.setReach(levels.crowdReach);
   }
 
   /** Generated models arrive after the first frame; the procedural scene stands in until then. */
@@ -176,7 +225,7 @@ export class App {
     };
     const { props } = assets;
     void this.crowd
-      .loadPeople(assets.crowd, assets.crowdDetailDistance, withBase(''))
+      .loadPeople(assets.crowd, this.quality.detailDistance, withBase(''))
       .catch(report('Crowd models'));
     void this.crowd.loadBlocks(assets.crowdBlocks, withBase('')).catch(report('Crowd blocks'));
     void this.props
@@ -364,7 +413,8 @@ export class App {
   private readonly frame = (timestamp: number): void => {
     this.frameHandle = requestAnimationFrame(this.frame);
     this.timer.update(timestamp);
-    const dt = Math.min(this.timer.getDelta(), MAX_FRAME_DT);
+    const rawDt = this.timer.getDelta(); // wall clock, for the frame-rate budget
+    const dt = Math.min(rawDt, MAX_FRAME_DT);
     const elapsed = this.timer.getElapsed();
 
     this.applyDueHits();
@@ -381,6 +431,8 @@ export class App {
       this.countEndsAt = 0;
     }
 
+    this.governor.tick(rawDt);
+    if (this.stats) this.updateStats(rawDt);
     this.pov.update(dt, elapsed);
     if (this.fsm.acceptsInput && !this.menu.isOpen) this.fsm.aim(this.aimedKey());
 
@@ -393,6 +445,17 @@ export class App {
 
     this.post.render(dt);
   };
+
+  private updateStats(dt: number): void {
+    this.statsTimer += dt;
+    this.statsFrames++;
+    if (this.statsTimer < 0.5 || !this.stats) return;
+    const { renderScale, detail, crowdReach } = this.governor.levels;
+    const fps = Math.round(this.statsFrames / this.statsTimer);
+    this.stats.textContent = `${String(fps)} fps · ${this.quality.tier} · rendu ×${renderScale.toFixed(2)} (dpr ${this.renderer.getPixelRatio().toFixed(2)}) · détail ${detail ? 'on' : 'off'} · foule ${String(Math.round(crowdReach * 100))} %`;
+    this.statsTimer = 0;
+    this.statsFrames = 0;
+  }
 
   /** Strokes whose time has come on the audio clock drive the visuals. */
   private applyDueHits(): void {

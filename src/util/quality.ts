@@ -17,6 +17,8 @@ export interface QualityProfile {
   pitDepth: number;
   shadowMapSize: number;
   antialias: boolean;
+  /** Rows nearer than this (metres from the stage edge) get the 24k-triangle people. */
+  detailDistance: number;
 }
 
 export interface DeviceHints {
@@ -40,6 +42,7 @@ export const PROFILES: Readonly<Record<QualityTier, QualityProfile>> = {
     pitDepth: 46,
     shadowMapSize: 1024,
     antialias: true,
+    detailDistance: 2,
   },
   low: {
     tier: 'low',
@@ -50,6 +53,7 @@ export const PROFILES: Readonly<Record<QualityTier, QualityProfile>> = {
     pitDepth: 24,
     shadowMapSize: 512,
     antialias: false,
+    detailDistance: 1,
   },
 };
 

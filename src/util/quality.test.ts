@@ -56,6 +56,7 @@ describe('quality tiers', () => {
       'stars',
       'pitDepth',
       'shadowMapSize',
+      'detailDistance',
     ] as const) {
       expect(PROFILES.low[k]).toBeLessThan(PROFILES.high[k]);
     }

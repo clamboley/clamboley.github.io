@@ -29,8 +29,6 @@ export const assets = {
   ],
   /** Festival lighting tower out in the field; undefined until generated. */
   tower: 'models/props/tower-truss-s1.lo.glb' as string | undefined,
-  /** Rows nearer than this (metres from the stage edge) get the detailed model. */
-  crowdDetailDistance: 2.5,
   /** Individual people stop here; beyond, blocks of thirty fill the pit. */
   crowdIndividualDepth: 6,
   crowdBlocks: [
