@@ -1,5 +1,5 @@
 import { SONG_FILLS } from './audio/songFills.ts';
-import type { KitElement, KitKey } from './kit.types.ts';
+import type { DrumSpec, DrumSupport, KitElement, KitKey } from './kit.types.ts';
 
 /**
  * Single source of truth for the kit: where each element sits, where it
@@ -91,3 +91,20 @@ export const KIT: readonly KitElement[] = [
 export const KIT_BY_KEY: Readonly<Record<KitKey, KitElement>> = Object.fromEntries(
   KIT.map((element) => [element.key, element]),
 ) as Record<KitKey, KitElement>;
+
+const SUPPORT: Partial<Record<KitKey, DrumSupport>> = {
+  snare: 'stand',
+  tom1: 'mount',
+  tom2: 'mount',
+  floor: 'legs',
+};
+
+/** The full kit as physical pieces: one piece per element, whole head each. */
+export const FULL_KIT: readonly DrumSpec[] = KIT.map((element) => ({
+  id: element.key,
+  kind: element.kind,
+  placement: element.placement,
+  zones: [{ key: element.key, side: 'whole' }],
+  playsFor: [element.key],
+  ...(SUPPORT[element.key] === undefined ? {} : { support: SUPPORT[element.key] }),
+}));

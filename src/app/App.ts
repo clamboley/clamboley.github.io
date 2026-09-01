@@ -4,7 +4,9 @@ import { AudioEngine } from '../audio/AudioEngine.ts';
 import { fillDuration } from '../audio/fills.ts';
 import { KeyboardInput } from '../input/KeyboardInput.ts';
 import { LookInput, TAP_SLOP } from '../input/LookInput.ts';
-import { KIT, KIT_BY_KEY } from '../kit.config.ts';
+import { COMPACT_KIT } from '../kit.compact.ts';
+import { FULL_KIT, KIT, KIT_BY_KEY } from '../kit.config.ts';
+import { COMPACT_RANGES, FULL_RANGES } from '../scene/gaze.ts';
 import { site } from '../site.config.ts';
 import type { KitKey } from '../kit.types.ts';
 import { createRenderer } from '../scene/createRenderer.ts';
@@ -30,6 +32,15 @@ import { Governor, type GovernorLevels } from './Governor.ts';
 import { StateMachine, type State } from './StateMachine.ts';
 
 const BACKGROUND = 0x05040a;
+
+/** The full kit for a wide screen, the compact one for a phone held upright. */
+type KitLayout = 'full' | 'compact';
+
+function layoutFor(width: number, height: number): KitLayout {
+  const forced = new URLSearchParams(location.search).get('layout');
+  if (forced === 'full' || forced === 'compact') return forced;
+  return height > width ? 'compact' : 'full';
+}
 const BUDGET_KEY = 'vitrine:budget';
 
 /** Where the adaptive budget ended up last time on this device. */
@@ -92,7 +103,8 @@ export class App {
   private readonly renderer: WebGLRenderer;
   private readonly scene = new Scene();
   private readonly pov: PovCamera;
-  private readonly kit: DrumKit;
+  private kit: DrumKit;
+  private layout: KitLayout;
   private readonly crowd: Crowd;
   private readonly lights: StageLights;
   private readonly sticks = new Sticks();
@@ -139,7 +151,9 @@ export class App {
     this.scene.environment = createStageEnvironment(this.renderer);
     this.scene.environmentIntensity = 0.45;
     this.pov = new PovCamera(motion);
-    this.kit = new DrumKit(KIT);
+    this.layout = layoutFor(window.innerWidth, window.innerHeight);
+    this.kit = new DrumKit(this.layout === 'compact' ? COMPACT_KIT : FULL_KIT, KIT_BY_KEY);
+    this.pov.setRanges(this.layout === 'compact' ? COMPACT_RANGES : FULL_RANGES);
     this.crowd = new Crowd(quality.people, assets.crowdIndividualDepth, motion, {
       pitLights: quality.pitLights,
       pitDepth: quality.pitDepth,
@@ -182,8 +196,8 @@ export class App {
       onFocus: (key) => {
         this.keyboardAim = key;
         this.hud.setCta('Entrée pour jouer un fill');
-        const [x, y, z] = KIT_BY_KEY[key].placement.position;
-        this.pov.lookAt(x, y, z);
+        const point = this.kit.aimPoint(key);
+        this.pov.lookAt(point.x, point.y, point.z);
       },
       onBlur: () => {
         this.keyboardAim = null;
@@ -447,8 +461,21 @@ export class App {
     };
   }
 
+  /** Turning a phone swaps the kit in place: nothing to load, the rest of the stage stays. */
+  private installKit(layout: KitLayout): void {
+    this.scene.remove(this.kit.root);
+    this.kit.dispose();
+    this.layout = layout;
+    this.kit = new DrumKit(layout === 'compact' ? COMPACT_KIT : FULL_KIT, KIT_BY_KEY);
+    this.scene.add(this.kit.root);
+    this.pov.setRanges(layout === 'compact' ? COMPACT_RANGES : FULL_RANGES);
+    if (this.fsm.acceptsInput) this.fsm.aim(null);
+  }
+
   private readonly resize = (): void => {
     const { innerWidth, innerHeight } = window;
+    const layout = layoutFor(innerWidth, innerHeight);
+    if (layout !== this.layout) this.installKit(layout);
     this.renderer.setSize(innerWidth, innerHeight);
     this.post.setSize(innerWidth, innerHeight);
     this.pov.resize(innerWidth / innerHeight);

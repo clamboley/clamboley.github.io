@@ -1,9 +1,8 @@
-import { Color, MeshPhysicalMaterial, MeshStandardMaterial, Vector2 } from 'three';
+import { Color, MeshPhysicalMaterial, MeshStandardMaterial, Vector2, type Texture } from 'three';
 import type { Logo } from '../kit.types.ts';
 import {
   cymbalRoughnessTexture,
   cymbalTexture,
-  drumHeadTexture,
   floorRoughnessTexture,
   sparkleNormalTexture,
 } from './textures.ts';
@@ -48,9 +47,9 @@ export function shellMaterial(emissive: string): MeshPhysicalMaterial {
   });
 }
 
-export function headMaterial(logo: Logo, label: string, emissive: string): MeshStandardMaterial {
+export function headMaterial(map: Texture, emissive: string): MeshStandardMaterial {
   return new MeshStandardMaterial({
-    map: drumHeadTexture(logo, label),
+    map,
     roughness: 0.62,
     metalness: 0,
     emissive: new Color(emissive),

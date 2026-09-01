@@ -2,6 +2,7 @@ import {
   BoxGeometry,
   CircleGeometry,
   CylinderGeometry,
+  DoubleSide,
   Group,
   MathUtils,
   Mesh,
@@ -14,8 +15,9 @@ import {
   type MeshPhysicalMaterial,
   type MeshStandardMaterial,
   type Object3D,
+  type Texture,
 } from 'three';
-import type { KitElement, KitKey } from '../kit.types.ts';
+import type { DrumSpec, DrumZone, KitElement, KitKey, ZoneSide } from '../kit.types.ts';
 import { cylinderBetween, cymbalGeometry, merge } from './geometry.ts';
 import {
   createKitMaterials,
@@ -24,6 +26,7 @@ import {
   shellMaterial,
   type KitMaterials,
 } from './materials.ts';
+import { drumHeadTexture, headMaskTexture, splitHeadTexture } from './textures.ts';
 
 const HIT_PADDING = 0.09; // metres added around each element for aiming
 const GLOW_LAMBDA = 7.7; // hover glow response
@@ -34,61 +37,108 @@ const STAND_DROP = 0.25; // cymbal stand tube ends this far below the cymbal cen
 
 type Reactive = MeshStandardMaterial | MeshPhysicalMaterial;
 
-interface ElementView {
-  element: KitElement;
+interface View {
+  spec: DrumSpec;
   group: Group;
   reactive: Reactive[];
+  /** The batter head, whose glow can be masked to one half. */
+  head: MeshStandardMaterial | null;
   baseRotX: number;
   glow: number;
   flash: number;
+  /** Destination whose colour and half currently light the piece. */
+  lit: KitKey | null;
+}
+
+interface HeadBuild {
+  reactive: Reactive[];
+  /** Where a half-head proxy goes: the parent of the batter head and its height. */
+  headParent: Object3D;
+  headY: number;
 }
 
 /**
- * Procedural, config-driven kit: shells with hoops, lugs and rods, lathed
- * cymbals, chrome stands, pedal. Keeps the same reactions (hover glow,
- * stroke flash / squash / cymbal wobble) whatever the geometry.
+ * Procedural, config-driven kit built from physical pieces: shells with hoops,
+ * lugs and rods, lathed cymbals, chrome stands, pedal. A piece carries one
+ * destination on its whole head or two on its halves; it also stands in for
+ * the full kit's voices it is told to, so every fill plays on every layout.
+ * Reactions (hover glow, stroke flash / squash / cymbal wobble) are the same
+ * whatever the geometry.
  */
 export class DrumKit {
   readonly root = new Group();
-  /** Invisible spheres used for aiming; larger than the visible parts. */
+  /** Invisible shapes used for aiming; larger than the visible parts. */
   readonly proxies: Mesh[] = [];
 
-  private readonly views = new Map<KitKey, ElementView>();
+  private readonly views = new Map<string, View>();
   private readonly keyByProxy = new Map<Object3D, KitKey>();
+  private readonly zoneOwner = new Map<KitKey, { view: View; zone: DrumZone }>();
+  private readonly voiceOwner = new Map<KitKey, View>();
   private readonly materials: KitMaterials = createKitMaterials();
+  private readonly masks: Record<ZoneSide, Texture> = {
+    whole: headMaskTexture('whole'),
+    left: headMaskTexture('left'),
+    right: headMaskTexture('right'),
+  };
 
-  constructor(elements: readonly KitElement[]) {
-    for (const element of elements) this.build(element);
-    this.addTomMounts(elements);
+  constructor(
+    specs: readonly DrumSpec[],
+    private readonly elements: Readonly<Record<KitKey, KitElement>>,
+  ) {
+    for (const spec of specs) this.build(spec);
+    this.addTomMounts(specs);
   }
 
-  /** Which element an aimed object belongs to. */
+  /** Which destination an aimed object belongs to. */
   keyOf(object: Object3D): KitKey | null {
     return this.keyByProxy.get(object) ?? null;
   }
 
-  /** World point a stick lands on for this element; null for the kick (played by the foot). */
-  strikePoint(key: KitKey): Vector3 | null {
-    const view = this.views.get(key);
-    if (!view || view.element.kind === 'kick') return null;
-    const { placement, kind } = view.element;
+  /** World point of a destination's zone (where the keyboard focus looks). */
+  aimPoint(key: KitKey): Vector3 {
+    const owner = this.zoneOwner.get(key);
+    if (!owner) return new Vector3(0, 1, -1);
+    const { view, zone } = owner;
+    const { placement, kind } = view.spec;
+    const x = this.sideOffset(zone.side, placement.radius);
+    const depth = placement.depth ?? 0.2;
     const local =
-      kind === 'drum'
-        ? new Vector3(0, (placement.depth ?? 0.2) / 2 + 0.004, placement.radius * 0.35)
-        : new Vector3(0, 0.012, placement.radius * 0.55);
+      kind === 'kick'
+        ? new Vector3(x, 0, depth / 2)
+        : kind === 'drum'
+          ? new Vector3(x, depth / 2, 0)
+          : new Vector3(0, 0, 0);
     view.group.updateWorldMatrix(true, false);
     return view.group.localToWorld(local);
   }
 
-  /** A stroke lands on this element. */
+  /** World point a stick lands on for a voice; null for the kick (played by the foot). */
+  strikePoint(key: KitKey): Vector3 | null {
+    const view = this.voiceOwner.get(key);
+    if (!view || view.spec.kind === 'kick') return null;
+    const { placement, kind } = view.spec;
+    // a voice that is also a destination of this piece lands on its own half
+    const zone = view.spec.zones.find((z) => z.key === key);
+    const x = this.sideOffset(zone?.side ?? 'whole', placement.radius);
+    const local =
+      kind === 'drum'
+        ? new Vector3(x, (placement.depth ?? 0.2) / 2 + 0.004, placement.radius * 0.35)
+        : new Vector3(x * 0.5, 0.012, placement.radius * 0.55);
+    view.group.updateWorldMatrix(true, false);
+    return view.group.localToWorld(local);
+  }
+
+  /** A stroke lands on a voice. */
   hit(key: KitKey, velocity: number): void {
-    const view = this.views.get(key);
+    const view = this.voiceOwner.get(key);
     if (view) view.flash = Math.max(view.flash, 0.7 + 0.3 * velocity);
   }
 
   update(dt: number, elapsed: number, hovered: KitKey | null): void {
     for (const view of this.views.values()) {
-      view.glow = MathUtils.damp(view.glow, view.element.key === hovered ? 1 : 0, GLOW_LAMBDA, dt);
+      const zone = hovered === null ? undefined : view.spec.zones.find((z) => z.key === hovered);
+      if (zone && view.lit !== zone.key) this.light(view, zone);
+      view.glow = MathUtils.damp(view.glow, zone ? 1 : 0, GLOW_LAMBDA, dt);
       view.flash *= Math.exp(-FLASH_LAMBDA * dt);
 
       const intensity = view.glow * 0.35 + view.flash * 2.2;
@@ -97,72 +147,162 @@ export class DrumKit {
       const s = 1 + view.glow * 0.03 + view.flash * 0.04;
       view.group.scale.set(s, s * (1 - view.flash * 0.08), s);
 
-      const { kind } = view.element;
+      const { kind } = view.spec;
       if (kind === 'cymbal' || kind === 'hihat') {
         view.group.rotation.x = view.baseRotX + Math.sin(elapsed * 38) * view.flash * 0.06;
       }
     }
   }
 
-  private build(element: KitElement): void {
-    const { placement, kind } = element;
+  /** Frees GPU resources when a layout is swapped out. */
+  dispose(): void {
+    this.root.traverse((object) => {
+      const mesh = object as Partial<Mesh>;
+      if (mesh.isMesh !== true || !mesh.geometry || !mesh.material) return;
+      mesh.geometry.dispose();
+      const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      for (const material of materials) material.dispose();
+    });
+    for (const mask of Object.values(this.masks)) mask.dispose();
+  }
+
+  /** The whole piece glows in the zone's colour, the head only on that zone's half. */
+  private light(view: View, zone: DrumZone): void {
+    view.lit = zone.key;
+    const { color } = this.elements[zone.key].logo;
+    for (const material of view.reactive) material.emissive.set(color);
+    if (view.head) view.head.emissiveMap = this.masks[zone.side];
+  }
+
+  private sideOffset(side: ZoneSide, radius: number): number {
+    return side === 'left' ? -radius * 0.42 : side === 'right' ? radius * 0.42 : 0;
+  }
+
+  private build(spec: DrumSpec): void {
+    const { placement, kind } = spec;
+    const first = spec.zones[0];
+    if (!first) throw new Error(`Piece ${spec.id} has no destination`);
     const position = new Vector3(...placement.position);
     const group = new Group();
     group.position.copy(position);
 
     let reactive: Reactive[];
+    let head: MeshStandardMaterial | null = null;
     switch (kind) {
       case 'kick':
-        reactive = this.buildKick(element, group, position);
+      case 'drum': {
+        head = this.headFor(spec);
+        const built =
+          kind === 'kick'
+            ? this.buildKick(spec, group, position, head, this.elements[first.key].logo.color)
+            : this.buildDrum(spec, group, position, head, this.elements[first.key].logo.color);
+        reactive = built.reactive;
+        if (spec.zones.length > 1) {
+          this.addHalfProxies(built.headParent, built.headY, placement.radius, spec.zones);
+        }
         break;
-      case 'drum':
-        reactive = this.buildDrum(element, group, position);
-        break;
+      }
       case 'hihat':
-        reactive = this.buildHiHat(element, group, position);
+        reactive = this.buildHiHat(spec, group, position, this.elements[first.key]);
         break;
       case 'cymbal':
-        reactive = this.buildCymbal(element, group, position);
+        reactive = this.buildCymbal(spec, group, position, this.elements[first.key]);
         break;
     }
 
     this.root.add(group);
-    this.views.set(element.key, {
-      element,
+    const view: View = {
+      spec,
       group,
       reactive,
+      head,
       baseRotX: group.rotation.x,
       glow: 0,
       flash: 0,
-    });
+      lit: null,
+    };
+    this.views.set(spec.id, view);
+    for (const zone of spec.zones) this.zoneOwner.set(zone.key, { view, zone });
+    for (const key of spec.playsFor) this.voiceOwner.set(key, view);
 
-    const proxy = new Mesh(
-      new SphereGeometry(placement.radius + HIT_PADDING, 10, 10),
-      new MeshBasicMaterial({ visible: false }),
-    );
-    proxy.position.copy(position);
-    this.root.add(proxy);
-    this.proxies.push(proxy);
-    this.keyByProxy.set(proxy, element.key);
+    if (spec.zones.length === 1) {
+      const proxy = new Mesh(
+        new SphereGeometry(placement.radius + HIT_PADDING, 10, 10),
+        new MeshBasicMaterial({ visible: false }),
+      );
+      proxy.position.copy(position);
+      this.root.add(proxy);
+      this.proxies.push(proxy);
+      this.keyByProxy.set(proxy, first.key);
+    }
+  }
+
+  /** The batter head's material: one logo, or two with a seam between them. */
+  private headFor(spec: DrumSpec): MeshStandardMaterial {
+    const left = spec.zones.find((z) => z.side === 'left');
+    const right = spec.zones.find((z) => z.side === 'right');
+    const first = spec.zones[0];
+    const map =
+      left && right
+        ? splitHeadTexture(
+            {
+              logo: this.elements[left.key].logo,
+              label: this.elements[left.key].destination.label,
+            },
+            {
+              logo: this.elements[right.key].logo,
+              label: this.elements[right.key].destination.label,
+            },
+            spec.kind === 'kick' ? 0.3 : 0,
+          )
+        : drumHeadTexture(
+            this.elements[first?.key ?? 'snare'].logo,
+            this.elements[first?.key ?? 'snare'].destination.label,
+          );
+    const material = headMaterial(map, this.elements[first?.key ?? 'snare'].logo.color);
+    material.emissiveMap = this.masks.whole; // present from the start: no recompile on hover
+    return material;
+  }
+
+  /** Two flat half-discs over a split head, one aiming target per destination. */
+  private addHalfProxies(parent: Object3D, y: number, r: number, zones: readonly DrumZone[]): void {
+    for (const zone of zones) {
+      if (zone.side === 'whole') continue;
+      const start = zone.side === 'left' ? Math.PI / 2 : -Math.PI / 2;
+      const proxy = new Mesh(
+        new CircleGeometry(r + HIT_PADDING * 0.6, 24, start, Math.PI),
+        new MeshBasicMaterial({ visible: false, side: DoubleSide }),
+      );
+      proxy.rotation.x = -Math.PI / 2;
+      proxy.position.y = y + 0.012;
+      parent.add(proxy);
+      this.proxies.push(proxy);
+      this.keyByProxy.set(proxy, zone.key);
+    }
   }
 
   /* ---------- drums ---------- */
 
-  private buildDrum(element: KitElement, group: Group, position: Vector3): Reactive[] {
-    const { placement, logo, destination, key } = element;
+  private buildDrum(
+    spec: DrumSpec,
+    group: Group,
+    position: Vector3,
+    head: MeshStandardMaterial,
+    color: string,
+  ): HeadBuild {
+    const { placement, support } = spec;
     const r = placement.radius;
     const depth = placement.depth ?? 0.2;
-    const lugs = key === 'snare' ? 10 : key === 'floor' ? 8 : 6;
+    const lugs = support === 'stand' ? 10 : support === 'legs' ? 8 : 6;
 
-    const shell = shellMaterial(logo.color);
-    const head = headMaterial(logo, destination.label, logo.color);
+    const shell = shellMaterial(color);
     group.add(this.shellMesh(r, depth, shell, head));
     group.add(this.hardwareMesh(r, depth, lugs, this.materials.chrome));
     if (placement.tilt !== undefined) group.rotation.x = placement.tilt;
 
     const legTop = position.y - depth / 2 - 0.02;
-    if (key === 'snare') this.addStand(position.x, position.z + 0.02, legTop, 0.36);
-    if (key === 'floor') {
+    if (support === 'stand') this.addStand(position.x, position.z + 0.02, legTop, 0.36);
+    if (support === 'legs') {
       // floor tom legs: three angled rods
       const legs: BufferGeometry[] = [];
       for (let i = 0; i < 3; i++) {
@@ -181,16 +321,21 @@ export class DrumKit {
       }
       this.addStatic(merge(legs), this.materials.chrome);
     }
-    return [shell, head];
+    return { reactive: [shell, head], headParent: group, headY: depth / 2 };
   }
 
-  private buildKick(element: KitElement, group: Group, position: Vector3): Reactive[] {
-    const { placement, logo, destination } = element;
+  private buildKick(
+    spec: DrumSpec,
+    group: Group,
+    position: Vector3,
+    head: MeshStandardMaterial,
+    color: string,
+  ): HeadBuild {
+    const { placement } = spec;
     const r = placement.radius;
     const depth = placement.depth ?? 0.4;
 
-    const shell = shellMaterial(logo.color);
-    const head = headMaterial(logo, destination.label, logo.color);
+    const shell = shellMaterial(color);
     // built upright, then laid on its side so the batter head faces the drummer
     const drum = new Group();
     drum.add(this.shellMesh(r, depth, shell, head, KICK_FRONT_OFFSET));
@@ -221,7 +366,7 @@ export class DrumKit {
     }
     this.addStatic(merge(spurs), this.materials.chrome);
     this.addPedal(position, depth);
-    return [shell, head];
+    return { reactive: [shell, head], headParent: drum, headY: depth / 2 - KICK_FRONT_OFFSET };
   }
 
   /** Open shell with both heads; `inset` sinks the batter head below the hoop. */
@@ -306,8 +451,14 @@ export class DrumKit {
 
   /* ---------- cymbals ---------- */
 
-  private buildCymbal(element: KitElement, group: Group, position: Vector3): Reactive[] {
-    const { placement, logo, destination } = element;
+  private buildCymbal(
+    spec: DrumSpec,
+    group: Group,
+    position: Vector3,
+    zone: KitElement,
+  ): Reactive[] {
+    const { placement } = spec;
+    const { logo, destination } = zone;
     const material = cymbalMaterial(logo, destination.label, logo.color);
     group.add(this.shadowed(new Mesh(cymbalGeometry(placement.radius), material)));
     // felt, wing nut and the tilter sleeve on top of the stand
@@ -332,8 +483,14 @@ export class DrumKit {
     return [material];
   }
 
-  private buildHiHat(element: KitElement, group: Group, position: Vector3): Reactive[] {
-    const { placement, logo, destination } = element;
+  private buildHiHat(
+    spec: DrumSpec,
+    group: Group,
+    position: Vector3,
+    zone: KitElement,
+  ): Reactive[] {
+    const { placement } = spec;
+    const { logo, destination } = zone;
     const r = placement.radius;
     const material = cymbalMaterial(logo, destination.label, logo.color);
     group.add(this.shadowed(new Mesh(cymbalGeometry(r), material)));
@@ -385,17 +542,15 @@ export class DrumKit {
   }
 
   /** Rack toms hang from the kick on angled rods. */
-  private addTomMounts(elements: readonly KitElement[]): void {
-    const kick = elements.find((e) => e.kind === 'kick');
+  private addTomMounts(specs: readonly DrumSpec[]): void {
+    const kick = specs.find((s) => s.kind === 'kick');
     if (!kick) return;
     const [kx, ky, kz] = kick.placement.position;
     const rods: BufferGeometry[] = [];
-    for (const key of ['tom1', 'tom2'] as const) {
-      const tom = elements.find((e) => e.key === key);
-      if (!tom) continue;
+    for (const tom of specs.filter((s) => s.support === 'mount')) {
       const [tx, ty, tz] = tom.placement.position;
       const base = new Vector3(
-        kx + Math.sign(tx) * 0.08,
+        kx + Math.sign(tx || 1) * 0.08,
         ky + kick.placement.radius - 0.02,
         kz + 0.05,
       );
@@ -405,7 +560,7 @@ export class DrumKit {
         cylinderBetween(mid, new Vector3(tx, ty - 0.02, tz), 0.009),
       );
     }
-    this.addStatic(merge(rods), this.materials.chrome);
+    if (rods.length > 0) this.addStatic(merge(rods), this.materials.chrome);
   }
 
   private addStatic(geometry: BufferGeometry, material: Material): void {

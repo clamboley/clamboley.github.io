@@ -72,3 +72,28 @@ export interface KitElement {
   /** Name of the hands / sticks animation clip (step 4). */
   animation: string;
 }
+
+/** A zone of a piece that leads somewhere: its whole head, or one half of it. */
+export type ZoneSide = 'whole' | 'left' | 'right';
+
+export interface DrumZone {
+  key: KitKey;
+  side: ZoneSide;
+}
+
+/** How a drum is held up: on a stand, on its legs, or mounted on the kick. */
+export type DrumSupport = 'stand' | 'legs' | 'mount';
+
+/**
+ * A physical piece of a kit: what is built and where. It carries one or two
+ * destination zones, and stands in for the full kit's voices listed in
+ * `playsFor` (strokes on those keys land on it).
+ */
+export interface DrumSpec {
+  id: string;
+  kind: KitKind;
+  placement: Placement;
+  zones: readonly DrumZone[];
+  playsFor: readonly KitKey[];
+  support?: DrumSupport;
+}

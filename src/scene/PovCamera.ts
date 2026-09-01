@@ -1,6 +1,14 @@
 import { MathUtils, PerspectiveCamera } from 'three';
 import type { MotionPrefs } from '../util/motion.ts';
-import { BASE_PITCH, EYE, clampGaze, gazeFromPointer, gazeToward } from './gaze.ts';
+import {
+  BASE_PITCH,
+  EYE,
+  FULL_RANGES,
+  clampGaze,
+  gazeFromPointer,
+  gazeToward,
+  type GazeRanges,
+} from './gaze.ts';
 
 const LOOK_LAMBDA = 7; // how fast the gaze follows the mouse (≈ 140 ms response)
 const SHAKE_LAMBDA = 7.7;
@@ -14,6 +22,7 @@ export class PovCamera {
   private targetYaw = 0;
   private targetPitch = BASE_PITCH;
   private shakeAmount = 0;
+  private ranges: GazeRanges = FULL_RANGES;
 
   constructor(private readonly motion: MotionPrefs) {
     this.camera.rotation.order = 'YXZ';
@@ -22,9 +31,16 @@ export class PovCamera {
 
   /** Pointer position normalised to [-1, 1] (x right, y up). */
   look(nx: number, ny: number): void {
-    const gaze = gazeFromPointer(nx, ny);
+    const gaze = gazeFromPointer(nx, ny, this.ranges);
     this.targetYaw = gaze.yaw;
     this.targetPitch = gaze.pitch;
+  }
+
+  /** The pointer steers over a different range for the compact kit. */
+  setRanges(ranges: GazeRanges): void {
+    this.ranges = ranges;
+    this.targetPitch = ranges.basePitch;
+    this.targetYaw = 0;
   }
 
   /** Turns towards a world point (keyboard focus on an element). */

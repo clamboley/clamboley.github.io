@@ -37,11 +37,26 @@ function easeInverse(value: number): number {
   return Math.sign(value) * Math.pow(Math.abs(value), 1 / EASE_EXPONENT);
 }
 
+/** How far the pointer steers, per kit layout. */
+export interface GazeRanges {
+  yaw: number;
+  pitch: number;
+  basePitch: number;
+}
+
+export const FULL_RANGES: GazeRanges = {
+  yaw: YAW_RANGE,
+  pitch: PITCH_RANGE,
+  basePitch: BASE_PITCH,
+};
+/** The compact kit sits within ±30° and a little lower: a short drag covers it. */
+export const COMPACT_RANGES: GazeRanges = { yaw: 0.6, pitch: 0.5, basePitch: -0.62 };
+
 /** Pointer position normalised to [-1, 1] (x right, y up) → gaze. */
-export function gazeFromPointer(nx: number, ny: number): Gaze {
+export function gazeFromPointer(nx: number, ny: number, ranges: GazeRanges = FULL_RANGES): Gaze {
   return {
-    yaw: -ease(nx) * YAW_RANGE,
-    pitch: clamp(BASE_PITCH + ease(ny) * PITCH_RANGE, PITCH_MIN, PITCH_MAX),
+    yaw: -ease(nx) * ranges.yaw,
+    pitch: clamp(ranges.basePitch + ease(ny) * ranges.pitch, PITCH_MIN, PITCH_MAX),
   };
 }
 

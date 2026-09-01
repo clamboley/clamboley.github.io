@@ -82,6 +82,56 @@ export function drumHeadTexture(logo: Logo, label: string): CanvasTexture {
 }
 
 /** Lathed bronze cymbal, logo on the bell. */
+/** A head shared by two destinations: a logo on each half, a thin line between. */
+export function splitHeadTexture(
+  left: { logo: Logo; label: string },
+  right: { logo: Logo; label: string },
+  /** Shifts logos and labels down the head (a kick seen over a snare shows its lower half). */
+  drop = 0,
+): CanvasTexture {
+  const size = 512;
+  const [canvas, ctx] = createCanvas(size);
+  const c = size / 2;
+  const gradient = ctx.createRadialGradient(c, c * 0.9, size * 0.05, c, c, c);
+  gradient.addColorStop(0, '#f4eee0');
+  gradient.addColorStop(0.75, '#e6ddc6');
+  gradient.addColorStop(1, '#c6bba0');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, size, size);
+  speckle(ctx, size, 9000, 0.06, 7);
+  ctx.strokeStyle = 'rgba(110,95,70,.35)';
+  ctx.lineWidth = 10;
+  ctx.beginPath();
+  ctx.arc(c, c, c * 0.93, 0, Math.PI * 2);
+  ctx.stroke();
+  // the dividing line, drawn like a seam in the coating
+  ctx.strokeStyle = 'rgba(70, 60, 45, 0.55)';
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.moveTo(c, c * 0.1);
+  ctx.lineTo(c, size - c * 0.1);
+  ctx.stroke();
+  const y = c * (0.92 + drop);
+  drawLogo(ctx, left.logo, c * 0.52, y, size * 0.15);
+  drawLabel(ctx, left.label, c * 0.52, y + c * 0.5, size * 0.07, '#56503f');
+  drawLogo(ctx, right.logo, c * 1.48, y, size * 0.15);
+  drawLabel(ctx, right.label, c * 1.48, y + c * 0.5, size * 0.07, '#56503f');
+  return colorTexture(canvas);
+}
+
+/** Emissive mask of a head: white where the hover glow may show. */
+export function headMaskTexture(side: 'whole' | 'left' | 'right'): CanvasTexture {
+  const size = 64;
+  const [canvas, ctx] = createCanvas(size);
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, size, size);
+  ctx.fillStyle = '#fff';
+  if (side === 'whole') ctx.fillRect(0, 0, size, size);
+  else if (side === 'left') ctx.fillRect(0, 0, size / 2 - 1, size);
+  else ctx.fillRect(size / 2 + 1, 0, size / 2 - 1, size);
+  return new CanvasTexture(canvas);
+}
+
 export function cymbalTexture(logo: Logo, label: string): CanvasTexture {
   const size = 512;
   const [canvas, ctx] = createCanvas(size);
