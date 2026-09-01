@@ -2,7 +2,7 @@
 /**
  * Converts a MuseScore drumset MIDI export into a Fill literal for
  * src/audio/songFills.ts. Usage:
- *   node tools/fills/midi2fill.mjs tools/fills/scores/floor.mid [samples/fills/floor.wav] [--tempo 150] [--sticking RLRR...]
+ *   node tools/fills/midi2fill.mjs tools/fills/scores/floor.mid [samples/fills/floor.wav] [--tempo 150] [--sticking RLRR...] [--map 48:tom1]
  * Prints the TS snippet, plus warnings (unmapped notes, duration).
  */
 import { readFileSync } from 'node:fs';
@@ -41,6 +41,15 @@ const args = process.argv.slice(3);
 const tempoFlag = args.indexOf('--tempo');
 const forcedBpm = tempoFlag >= 0 ? Number(args[tempoFlag + 1]) : null;
 if (tempoFlag >= 0) args.splice(tempoFlag, 2);
+// --map 48:tom1[,47:floor]: per-score overrides of the General MIDI mapping
+const mapFlag = args.indexOf('--map');
+if (mapFlag >= 0) {
+  for (const pair of String(args[mapFlag + 1]).split(',')) {
+    const [note, key] = pair.split(':');
+    if (note && key) GM.set(Number(note), key);
+  }
+  args.splice(mapFlag, 2);
+}
 const stickingFlag = args.indexOf('--sticking');
 const sticking = stickingFlag >= 0 ? String(args[stickingFlag + 1]).toUpperCase() : null;
 if (stickingFlag >= 0) args.splice(stickingFlag, 2);

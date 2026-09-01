@@ -179,11 +179,12 @@ export const SONG_FILLS: Readonly<Record<KitKey, Fill>> = {
   // Contact — Corentin's first drum fill, from his MuseScore score
   // (MIDI says 167 bpm, the audio export runs at 86: converted with --tempo 86)
   // sticking from Corentin, encoded with --sticking
+  // (his GM 48 is the high tom here: --map 48:tom1)
   crash: {
     sample: 'samples/fills/crash.wav',
     hits: [
       { t: 0, key: 'snare', velocity: 0.63, hand: 'right' },
-      { t: 0.349, key: 'tom2', velocity: 0.63, hand: 'right' },
+      { t: 0.349, key: 'tom1', velocity: 0.63, hand: 'right' },
       { t: 0.698, key: 'snare', velocity: 0.63, hand: 'right' },
       { t: 0.872, key: 'snare', velocity: 0.63, hand: 'left' },
       { t: 1.047, key: 'floor', velocity: 0.63, hand: 'right' },

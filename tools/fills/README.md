@@ -40,6 +40,9 @@ de samples sont relatifs à `public/`, sans slash initial (résolus par rapport 
 la page). L'alignement WAV/MIDI suppose que les deux exports partent du même
 début de partition.
 
+Si une note ne tombe pas sur le bon fût pour une partition donnée, `--map 48:tom1`
+redirige cette note GM pour ce fill seul.
+
 ## Doigté
 
 Le doigté ne voyage pas dans le MIDI : Corentin le donne en clair (une lettre

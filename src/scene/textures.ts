@@ -210,3 +210,54 @@ export function glowSpriteTexture(): Texture {
   ctx.fillRect(0, 0, size, size);
   return new CanvasTexture(canvas);
 }
+
+/**
+ * Pale hickory for the sticks: a warm base with fine darker grain lines
+ * running along the length (v of the lathe), a few of them wandering.
+ */
+export function woodTexture(): CanvasTexture {
+  const width = 128;
+  const height = 512;
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('2D canvas unavailable');
+  const base = ctx.createLinearGradient(0, 0, width, 0);
+  base.addColorStop(0, '#d8b98d');
+  base.addColorStop(0.5, '#e3c79c');
+  base.addColorStop(1, '#d4b384');
+  ctx.fillStyle = base;
+  ctx.fillRect(0, 0, width, height);
+  const random = seededRandom(5);
+  for (let i = 0; i < 46; i++) {
+    const x0 = random() * width;
+    const wander = (random() - 0.5) * 18;
+    const alpha = 0.05 + random() * 0.12;
+    ctx.strokeStyle = `rgba(110, 72, 34, ${String(alpha)})`;
+    ctx.lineWidth = 0.6 + random() * 1.6;
+    ctx.beginPath();
+    ctx.moveTo(x0, 0);
+    ctx.bezierCurveTo(
+      x0 + wander,
+      height * 0.33,
+      x0 - wander,
+      height * 0.66,
+      x0 + wander * 0.4,
+      height,
+    );
+    ctx.stroke();
+  }
+  // a faint darker ring where the varnish gathers at the neck
+  const neck = ctx.createLinearGradient(0, height * 0.9, 0, height * 0.95);
+  neck.addColorStop(0, 'rgba(90, 58, 26, 0)');
+  neck.addColorStop(0.5, 'rgba(90, 58, 26, 0.16)');
+  neck.addColorStop(1, 'rgba(90, 58, 26, 0)');
+  ctx.fillStyle = neck;
+  ctx.fillRect(0, height * 0.9, width, height * 0.05);
+  const texture = new CanvasTexture(canvas);
+  texture.colorSpace = SRGBColorSpace;
+  texture.wrapS = RepeatWrapping;
+  texture.anisotropy = 4;
+  return texture;
+}

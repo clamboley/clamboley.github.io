@@ -1,4 +1,13 @@
-import { CylinderGeometry, Group, MathUtils, Mesh, MeshStandardMaterial, Vector3 } from 'three';
+import {
+  Group,
+  LatheGeometry,
+  MathUtils,
+  Mesh,
+  MeshStandardMaterial,
+  Vector2,
+  Vector3,
+} from 'three';
+import { woodTexture } from './textures.ts';
 import type { KitKey } from '../kit.types.ts';
 
 const LENGTH = 0.41; // metres, a 5A stick
@@ -59,12 +68,32 @@ const PREFERRED: Partial<Record<KitKey, Side>> = {
   floor: 'right',
 };
 
+/**
+ * A 5A stick turned on a lathe: rounded butt, straight shaft, a long
+ * shoulder thinning into the neck, and an acorn tip. Profile as (radius,
+ * distance from the butt) in metres.
+ */
+const PROFILE: readonly (readonly [number, number])[] = [
+  [0, 0],
+  [0.0052, 0.0012],
+  [0.0068, 0.004],
+  [0.0072, 0.009],
+  [0.0072, 0.24], // shaft
+  [0.0064, 0.3], // shoulder
+  [0.0052, 0.345],
+  [0.0044, 0.372], // neck
+  [0.0046, 0.381],
+  [0.0058, 0.39], // acorn belly
+  [0.0055, 0.397],
+  [0.0034, 0.404],
+  [0, LENGTH],
+];
+
 function stickGroup(material: MeshStandardMaterial): Group {
-  // one tapered cylinder for the whole stick: a simple silhouette that reads
-  // well at arm's length without a separate tip mesh
-  const geometry = new CylinderGeometry(0.0045, 0.0078, LENGTH, 12, 1)
-    .translate(0, LENGTH / 2, 0)
-    .rotateX(Math.PI / 2); // along +z, butt at the origin
+  const geometry = new LatheGeometry(
+    PROFILE.map(([r, z]) => new Vector2(r, z)),
+    22,
+  ).rotateX(Math.PI / 2); // along +z, butt at the origin
   const mesh = new Mesh(geometry, material);
   mesh.castShadow = true;
   const group = new Group();
@@ -80,12 +109,12 @@ function stickGroup(material: MeshStandardMaterial): Group {
 export class Sticks {
   readonly root = new Group();
 
-  // matte and fairly dark: an inch from the camera under the key light, glossy
-  // pale wood blows past the bloom threshold and washes the whole frame out
+  // pale hickory with a light varnish; the grain runs along the lathe's v
   private readonly material = new MeshStandardMaterial({
-    color: 0xc4a878,
-    roughness: 0.7,
-    envMapIntensity: 0.3,
+    map: woodTexture(),
+    color: 0xf2e2c8,
+    roughness: 0.48, // lightly varnished hickory
+    envMapIntensity: 0.4,
     transparent: true,
     opacity: 0,
   });
