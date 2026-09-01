@@ -38,12 +38,21 @@ def score(scale):
 # the phrase has to fit inside the file: rules out the x1.5 aliases of swung grids
 duration = n / fs
 max_scale = (duration - 0.2) / times[-1]
-coarse = max((score(s / 100), s / 100) for s in range(40, 251) if s / 100 <= max_scale)
+# scan wide: a score written at 252 bpm exported with a 57 bpm MIDI meta needs x0.23
+candidates = sorted(((score(s / 100), s / 100) for s in range(12, 251) if s / 100 <= max_scale), reverse=True)
+coarse = candidates[0]
 fine = max((score(s / 1000), s / 1000) for s in range(int(coarse[1] * 1000) - 30, int(coarse[1] * 1000) + 31))
 scale = fine[1]
 unity = score(1.0)
 print(f'MIDI tempo {tempo} bpm, {len(times)} onsets, last at {times[-1]:.3f} s; wav {duration:.2f} s (scale <= {max_scale:.2f})')
 print(f'best scale {scale:.3f} (score x{fine[0] / max(unity, 1e-9):.2f} vs 1.0)')
+# show the runners-up: an octave alias (x2 or x0.5 of the truth) scores high too
+shown, others = [], []
+for v, sc in candidates:
+    if all(abs(sc - o) > 0.05 for o in shown):
+        shown.append(sc); others.append(f'{sc:.2f}->{tempo / sc:.0f}bpm (x{v / max(unity, 1e-9):.1f})')
+    if len(shown) == 4: break
+print('candidates:', ', '.join(others))
 if abs(scale - 1) < 0.03:
     print('=> exports agree, no --tempo needed')
 else:
