@@ -1,7 +1,6 @@
 import { FogExp2, Raycaster, Scene, Timer, Vector2, Vector3, type WebGLRenderer } from 'three';
 import { assets } from '../assets.config.ts';
 import { AudioEngine } from '../audio/AudioEngine.ts';
-import { PHONE_KICK_FILL } from '../audio/songFills.ts';
 import { fillDuration } from '../audio/fills.ts';
 import { KeyboardInput } from '../input/KeyboardInput.ts';
 import { LookInput, TAP_SLOP } from '../input/LookInput.ts';
@@ -417,7 +416,10 @@ export class App {
   private preloadFillSamples(): void {
     if (this.fillSamplesRequested) return;
     this.fillSamplesRequested = true;
-    for (const fill of [...KIT.map((element) => element.fill), PHONE_KICK_FILL]) {
+    const phoneFills = COMPACT_KIT.flatMap((spec) =>
+      typeof spec.fill === 'object' ? [spec.fill] : [],
+    );
+    for (const fill of [...KIT.map((element) => element.fill), ...phoneFills]) {
       const { sample } = fill;
       if (sample === null) continue;
       void this.audio.preload(sample).catch((error: unknown) => {
