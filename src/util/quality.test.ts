@@ -36,10 +36,11 @@ describe('quality tiers', () => {
     expect(needsFallback({ ...desktop, deviceMemory: undefined })).toBe(false);
   });
 
-  it('falls back without WebGL2, on save-data or on tiny memory', () => {
+  it('falls back without WebGL2 or on save-data only', () => {
     expect(needsFallback({ ...desktop, webgl2: false })).toBe(true);
     expect(needsFallback({ ...desktop, saveData: true })).toBe(true);
-    expect(needsFallback({ ...desktop, deviceMemory: 2 })).toBe(true);
+    // small memory stays on the scene: the adaptive budget handles it
+    expect(needsFallback({ ...desktop, deviceMemory: 2 })).toBe(false);
   });
 
   it('lets the query string override the tier', () => {

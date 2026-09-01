@@ -278,8 +278,15 @@ body.is-menu .site-nav {
   margin: 0 auto;
   padding: 16vh 24px 12vh;
 }
-.menu-hint {
+.menu-hint,
+.fallback-why {
   display: none;
+}
+body.is-fallback .fallback-why {
+  display: block;
+  margin-top: 10px;
+  font-size: 11.5px;
+  color: #6f678f;
 }
 
 /* --- Escape: the same list, over the live scene --- */

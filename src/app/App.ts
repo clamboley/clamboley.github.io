@@ -3,7 +3,7 @@ import { assets } from '../assets.config.ts';
 import { AudioEngine } from '../audio/AudioEngine.ts';
 import { fillDuration } from '../audio/fills.ts';
 import { KeyboardInput } from '../input/KeyboardInput.ts';
-import { LookInput } from '../input/LookInput.ts';
+import { LookInput, TAP_SLOP } from '../input/LookInput.ts';
 import { KIT, KIT_BY_KEY } from '../kit.config.ts';
 import { site } from '../site.config.ts';
 import type { KitKey } from '../kit.types.ts';
@@ -122,6 +122,7 @@ export class App {
   private countEndsAt = 0;
   private fillSamplesRequested = false;
   private frameHandle = 0;
+  private tap: { x: number; y: number; at: number } | null = null;
 
   constructor({ container, hud, overlay, quality }: AppOptions) {
     this.hud = hud;
@@ -253,6 +254,10 @@ export class App {
     window.addEventListener('resize', this.resize);
     for (const type of GESTURES) window.addEventListener(type, this.onFirstGesture);
     window.addEventListener('click', this.onClick);
+    // iOS Safari does not deliver a canvas tap as a click on window: read it ourselves
+    const canvas = this.renderer.domElement;
+    canvas.addEventListener('touchstart', this.onTouchStart, { passive: true });
+    canvas.addEventListener('touchend', this.onTouchEnd, { passive: false });
     // try right away: a browser that already trusts the site plays from the start,
     // the others keep the ambience scheduled until the first gesture unlocks it
     this.onFirstGesture();
@@ -264,6 +269,8 @@ export class App {
     window.removeEventListener('resize', this.resize);
     for (const type of GESTURES) window.removeEventListener(type, this.onFirstGesture);
     window.removeEventListener('click', this.onClick);
+    this.renderer.domElement.removeEventListener('touchstart', this.onTouchStart);
+    this.renderer.domElement.removeEventListener('touchend', this.onTouchEnd);
     this.look.dispose();
     this.keyboard.dispose();
     this.menu.dispose();
@@ -325,6 +332,26 @@ export class App {
       .catch((error: unknown) => {
         console.warn('Crowd ambience unavailable', error);
       });
+  };
+
+  private readonly onTouchStart = (event: TouchEvent): void => {
+    const touch = event.touches[0];
+    this.tap =
+      event.touches.length === 1 && touch
+        ? { x: touch.clientX, y: touch.clientY, at: performance.now() }
+        : null;
+  };
+
+  /** A short touch that did not travel is a tap: play what the crosshair aims at. */
+  private readonly onTouchEnd = (event: TouchEvent): void => {
+    const tap = this.tap;
+    const touch = event.changedTouches[0];
+    this.tap = null;
+    if (!tap || !touch) return;
+    const moved = Math.hypot(touch.clientX - tap.x, touch.clientY - tap.y);
+    if (moved > TAP_SLOP || performance.now() - tap.at > 400) return;
+    event.preventDefault(); // no synthetic click behind it
+    this.onClick();
   };
 
   private readonly onClick = (): void => {

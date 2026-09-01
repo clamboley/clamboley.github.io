@@ -59,9 +59,8 @@ export const PROFILES: Readonly<Record<QualityTier, QualityProfile>> = {
 
 /** Too weak for the scene at all: the styled navigation takes over. */
 export function needsFallback(hints: DeviceHints): boolean {
-  if (!hints.webgl2) return true;
-  if (hints.saveData) return true;
-  return hints.deviceMemory !== undefined && hints.deviceMemory <= 2;
+  // memory alone is no reason any more: the adaptive budget copes with weak GPUs
+  return !hints.webgl2 || hints.saveData;
 }
 
 export function pickTier(hints: DeviceHints): QualityTier {

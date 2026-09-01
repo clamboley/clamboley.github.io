@@ -11,8 +11,16 @@ const fallback =
   params.has('fallback') || !webgl || (needsFallback(hints) && !params.has('force3d'));
 
 if (fallback) {
+  const reason = params.has('fallback')
+    ? 'affichage demandé'
+    : !webgl
+      ? 'WebGL indisponible'
+      : !hints.webgl2
+        ? 'WebGL2 indisponible'
+        : 'économie de données activée';
+  console.info('[vitrine] navigation instead of the scene', { reason, hints });
   // without WebGL there is nothing to try; otherwise the visitor may insist
-  showFallback({ offer3d: webgl });
+  showFallback({ offer3d: webgl, reason });
 } else {
   const quality = resolveQuality(hints, params.get('quality'));
   // the scene (three.js included) is a separate chunk: only fetched when it will run
@@ -24,6 +32,6 @@ if (fallback) {
     })
     .catch((error: unknown) => {
       console.error('Scene failed to start, showing the navigation', error);
-      showFallback({ offer3d: false });
+      showFallback({ offer3d: false, reason: 'la scène n’a pas pu démarrer' });
     });
 }
