@@ -392,6 +392,9 @@ export class App {
         .map((hit) => ({ at: start + hit.t, key: hit.key, velocity: hit.velocity }))
         .sort((a, b) => a.at - b.at);
       this.fillEndsAt = start + fillDuration(fill);
+      this.kit.scheduleKicks(
+        fill.hits.filter((hit) => hit.key === 'kick').map((hit) => start + hit.t),
+      );
       this.audio.cheer(start + 0.75);
 
       const strikes: Strike[] = [];
@@ -516,6 +519,7 @@ export class App {
     this.crowd.update(dt, elapsed);
     this.lights.update(elapsed);
     this.sky.update(elapsed);
+    this.kit.updateBeater(this.audio.currentTime);
     this.sticks.update(this.audio.currentTime, dt);
 
     this.post.render(dt);

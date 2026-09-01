@@ -29,6 +29,9 @@ import {
 import { drumHeadTexture, headMaskTexture, splitHeadTexture } from './textures.ts';
 
 const HIT_PADDING = 0.09; // metres added around each element for aiming
+const BEATER_REST = 0.55; // radians the kick beater sits back from the head
+const BEATER_WINDUP = 0.12; // seconds of forward swing before a kick contact
+const BEATER_RECOVER = 0.22; // seconds to swing back after the contact
 const CYMBAL_PADDING = 0.03; // thinner margin around a cymbal's disc: its neighbours sit right below
 const GLOW_LAMBDA = 7.7; // hover glow response
 const FLASH_LAMBDA = 6.3; // stroke flash decay
@@ -75,6 +78,7 @@ export class DrumKit {
   private readonly keyByProxy = new Map<Object3D, KitKey>();
   private readonly zoneOwner = new Map<KitKey, { view: View; zone: DrumZone }>();
   private readonly voiceOwner = new Map<KitKey, View>();
+  private beater: { pivot: Group; queue: number[] } | null = null;
   private readonly materials: KitMaterials = createKitMaterials();
   private readonly masks: Record<ZoneSide, Texture> = {
     whole: headMaskTexture('whole'),
@@ -165,6 +169,7 @@ export class DrumKit {
 
   /** Frees GPU resources when a layout is swapped out. */
   dispose(): void {
+    this.beater = null;
     this.root.traverse((object) => {
       const mesh = object as Partial<Mesh>;
       if (mesh.isMesh !== true || !mesh.geometry || !mesh.material) return;
@@ -468,15 +473,47 @@ export class DrumKit {
       .rotateZ(Math.PI / 2)
       .translate(0, floor + 0.17, headZ + 0.03);
     group.add(this.shadowed(new Mesh(merge([board, base, post, axle]), this.materials.chrome)));
-    const rod = cylinderBetween(
-      new Vector3(0, floor + 0.17, headZ + 0.03),
-      new Vector3(0, -0.05, headZ + 0.028),
-      0.004,
-    );
-    group.add(this.shadowed(new Mesh(rod, this.materials.chrome)));
+
+    // the beater swings around the axle: built touching the head, parked back
+    const pivot = new Group();
+    pivot.position.set(0, floor + 0.17, headZ + 0.03);
+    const tip = new Vector3(0, -0.05 - (floor + 0.17), -0.002);
+    const rod = cylinderBetween(new Vector3(0, 0, 0), tip, 0.004);
+    pivot.add(this.shadowed(new Mesh(rod, this.materials.chrome)));
     const beater = new Mesh(new SphereGeometry(0.026, 16, 12), this.materials.felt);
-    beater.position.set(0, -0.05, headZ + 0.028);
-    group.add(this.shadowed(beater));
+    beater.position.copy(tip);
+    pivot.add(this.shadowed(beater));
+    pivot.rotation.x = BEATER_REST;
+    group.add(pivot);
+    this.beater = { pivot, queue: [] };
+  }
+
+  /** Kick contacts to come, on the audio clock: the beater winds up ahead of each. */
+  scheduleKicks(times: readonly number[]): void {
+    if (this.beater === null || times.length === 0) return;
+    this.beater.queue.push(...times);
+    this.beater.queue.sort((a, b) => a - b);
+  }
+
+  /** Swing towards the next contact, rebound after the last one. */
+  updateBeater(now: number): void {
+    const b = this.beater;
+    if (b === null) return;
+    while (b.queue.length > 0 && (b.queue.at(0) ?? Infinity) < now - BEATER_RECOVER) {
+      b.queue.shift();
+    }
+    let angle = BEATER_REST;
+    const last = b.queue.filter((t) => t <= now).at(-1);
+    if (last !== undefined) {
+      const u = Math.min(1, (now - last) / BEATER_RECOVER);
+      angle = BEATER_REST * u * (2 - u); // eased rebound towards the rest pose
+    }
+    const next = b.queue.find((t) => t > now);
+    if (next !== undefined && next - now < BEATER_WINDUP) {
+      const v = 1 - (next - now) / BEATER_WINDUP;
+      angle = Math.min(angle, BEATER_REST * (1 - v * v)); // accelerating swing in
+    }
+    b.pivot.rotation.x = angle;
   }
 
   /* ---------- cymbals ---------- */
