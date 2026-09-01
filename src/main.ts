@@ -6,11 +6,13 @@ import { supportsWebGL } from './util/webgl.ts';
 const params = new URLSearchParams(location.search);
 const hints = readDeviceHints();
 // `?fallback` shows the plain navigation, `?force3d` insists on the scene
+const webgl = supportsWebGL();
 const fallback =
-  params.has('fallback') || !supportsWebGL() || (needsFallback(hints) && !params.has('force3d'));
+  params.has('fallback') || !webgl || (needsFallback(hints) && !params.has('force3d'));
 
 if (fallback) {
-  showFallback();
+  // without WebGL there is nothing to try; otherwise the visitor may insist
+  showFallback({ offer3d: webgl });
 } else {
   const quality = resolveQuality(hints, params.get('quality'));
   const stayOnRedirect = import.meta.env.DEV || params.has('stay');
@@ -23,6 +25,6 @@ if (fallback) {
     })
     .catch((error: unknown) => {
       console.error('Scene failed to start, showing the navigation', error);
-      showFallback();
+      showFallback({ offer3d: false });
     });
 }

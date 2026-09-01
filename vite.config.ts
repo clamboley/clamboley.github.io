@@ -26,6 +26,18 @@ function siteHtml(): Plugin {
     ({ key, destination }) =>
       `<li><a href="${escapeHtml(destination.url)}" data-key="${key}">${escapeHtml(destination.label)}</a></li>`,
   ).join('\n        ');
+  const sameAs = KIT.map(({ destination }) => destination.url).filter((url) =>
+    url.startsWith('https://'),
+  );
+  const jsonld = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: site.name,
+    jobTitle: site.tagline,
+    url: site.url,
+    image: `${site.url}og.jpg`,
+    sameAs,
+  });
   const tokens: Record<string, string> = {
     'site.lang': site.lang,
     'site.name': escapeHtml(site.name),
@@ -34,6 +46,8 @@ function siteHtml(): Plugin {
     'site.description': escapeHtml(site.description),
     'site.url': escapeHtml(site.url),
     'nav.items': navItems,
+    // a script body: HTML-escaping would corrupt it, `</` cannot occur in these values
+    'site.jsonld': jsonld,
   };
   return {
     name: 'vitrine:site-html',

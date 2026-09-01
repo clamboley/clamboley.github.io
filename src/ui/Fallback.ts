@@ -1,7 +1,10 @@
 /**
- * No WebGL (or a device we don't trust with the scene): reveal the
- * semantic navigation that is otherwise hidden for crawlers and screen readers.
+ * No WebGL, or a device we don't trust with the scene: the semantic
+ * navigation, otherwise hidden for crawlers and screen readers, becomes the
+ * page, laid over a photo of the kit.
  */
-export function showFallback(): void {
+export function showFallback(options: { offer3d: boolean }): void {
   document.body.classList.add('is-fallback');
+  const offer = document.querySelector<HTMLElement>('.fallback-3d');
+  if (offer) offer.hidden = !options.offer3d;
 }

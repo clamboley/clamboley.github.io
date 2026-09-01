@@ -220,14 +220,24 @@ body.is-aiming #stage canvas {
   outline: none;
 }
 
-/* --- no WebGL: the hidden navigation becomes the page --- */
+/* --- no WebGL: the hidden navigation becomes the page, over a photo of the kit --- */
 body.is-fallback {
   overflow: auto;
   touch-action: auto;
+  min-height: 100vh;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(5, 4, 10, 0.55) 0%,
+      rgba(5, 4, 10, 0.78) 60%,
+      rgba(5, 4, 10, 0.94) 100%
+    ),
+    url('/kit.jpg') center 40% / cover no-repeat fixed var(--bg);
 }
 body.is-fallback #hud,
 body.is-fallback .vignette,
-body.is-fallback #stage {
+body.is-fallback #stage,
+body.is-fallback .identity {
   display: none;
 }
 body.is-fallback .site-nav {
@@ -238,8 +248,21 @@ body.is-fallback .site-nav {
   clip-path: none;
   white-space: normal;
   max-width: 32rem;
-  margin: 18vh auto 0;
-  padding: 0 24px;
+  margin: 0 auto;
+  padding: 16vh 24px 12vh;
+}
+.fallback-3d {
+  margin-top: 36px;
+}
+.fallback-3d a {
+  font-size: 13px;
+  color: var(--ink-soft);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.fallback-3d a:hover,
+.fallback-3d a:focus-visible {
+  color: #fff;
 }
 .site-nav h1 {
   font-size: 15px;
