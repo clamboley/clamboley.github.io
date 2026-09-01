@@ -185,6 +185,7 @@ export class DrumKit {
     const position = new Vector3(...placement.position);
     const group = new Group();
     group.position.copy(position);
+    if (placement.yaw !== undefined) group.rotation.y = placement.yaw;
 
     let reactive: Reactive[];
     let head: MeshStandardMaterial | null = null;
@@ -253,7 +254,7 @@ export class DrumKit {
               logo: this.elements[right.key].logo,
               label: this.elements[right.key].destination.label,
             },
-            spec.kind === 'kick' ? 0.3 : 0,
+            0,
           )
         : drumHeadTexture(
             this.elements[first?.key ?? 'snare'].logo,
@@ -349,23 +350,21 @@ export class DrumKit {
     drum.rotation.x = Math.PI / 2;
     group.add(drum);
 
-    // spurs on the audience side, pedal on the drummer's side (world-aligned parts)
+    // spurs on the audience side, pedal on the drummer's side, in the kick's own
+    // frame so that a turned kick keeps them
+    const floor = -position.y;
     const spurs: BufferGeometry[] = [];
     for (const side of [-1, 1]) {
       spurs.push(
         cylinderBetween(
-          new Vector3(
-            position.x + side * (r - 0.02),
-            position.y - r * 0.45,
-            position.z - depth * 0.35,
-          ),
-          new Vector3(position.x + side * (r + 0.12), 0.01, position.z - depth * 0.35 - 0.1),
+          new Vector3(side * (r - 0.02), -r * 0.45, -depth * 0.35),
+          new Vector3(side * (r + 0.12), floor + 0.01, -depth * 0.35 - 0.1),
           0.007,
         ),
       );
     }
-    this.addStatic(merge(spurs), this.materials.chrome);
-    this.addPedal(position, depth);
+    group.add(this.shadowed(new Mesh(merge(spurs), this.materials.chrome)));
+    this.addPedal(group, floor, depth);
     return { reactive: [shell, head], headParent: drum, headY: depth / 2 - KICK_FRONT_OFFSET };
   }
 
@@ -423,30 +422,31 @@ export class DrumKit {
     return this.shadowed(new Mesh(merge(parts), material));
   }
 
-  private addPedal(kick: Vector3, depth: number): void {
-    const headZ = kick.z + depth / 2 - KICK_FRONT_OFFSET;
+  /** Board, post and beater in the kick's frame; `floor` is the stage in local y. */
+  private addPedal(group: Group, floor: number, depth: number): void {
+    const headZ = depth / 2 - KICK_FRONT_OFFSET;
     const board = new BoxGeometry(0.085, 0.008, 0.26)
       .rotateX(0.22)
-      .translate(kick.x, 0.035, headZ + 0.2);
-    const base = new BoxGeometry(0.16, 0.012, 0.06).translate(kick.x, 0.006, headZ + 0.05);
+      .translate(0, floor + 0.035, headZ + 0.2);
+    const base = new BoxGeometry(0.16, 0.012, 0.06).translate(0, floor + 0.006, headZ + 0.05);
     const post = new CylinderGeometry(0.006, 0.006, 0.16).translate(
-      kick.x + 0.06,
-      0.09,
+      0.06,
+      floor + 0.09,
       headZ + 0.03,
     );
     const axle = new CylinderGeometry(0.006, 0.006, 0.14)
       .rotateZ(Math.PI / 2)
-      .translate(kick.x, 0.17, headZ + 0.03);
-    this.addStatic(merge([board, base, post, axle]), this.materials.chrome);
+      .translate(0, floor + 0.17, headZ + 0.03);
+    group.add(this.shadowed(new Mesh(merge([board, base, post, axle]), this.materials.chrome)));
     const rod = cylinderBetween(
-      new Vector3(kick.x, 0.17, headZ + 0.03),
-      new Vector3(kick.x, kick.y - 0.05, headZ + 0.028),
+      new Vector3(0, floor + 0.17, headZ + 0.03),
+      new Vector3(0, -0.05, headZ + 0.028),
       0.004,
     );
-    this.addStatic(rod, this.materials.chrome);
+    group.add(this.shadowed(new Mesh(rod, this.materials.chrome)));
     const beater = new Mesh(new SphereGeometry(0.026, 16, 12), this.materials.felt);
-    beater.position.set(kick.x, kick.y - 0.05, headZ + 0.028);
-    this.root.add(this.shadowed(beater));
+    beater.position.set(0, -0.05, headZ + 0.028);
+    group.add(this.shadowed(beater));
   }
 
   /* ---------- cymbals ---------- */

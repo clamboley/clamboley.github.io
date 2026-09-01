@@ -10,7 +10,9 @@ export const COMPACT_KIT: readonly DrumSpec[] = [
   {
     id: 'kick',
     kind: 'kick',
-    placement: { position: [0, 0.3, -0.62], radius: 0.27, depth: 0.32 },
+    // the full kit's kick, snare and high tom shifted 14 cm right so their
+    // barycentre sits in the middle of the view; the kick turns to face the eye
+    placement: { position: [0.22, 0.36, -1.06], radius: 0.3, depth: 0.42, yaw: -0.18 },
     zones: [
       { key: 'floor', side: 'left' },
       { key: 'hihat', side: 'right' },
@@ -20,7 +22,7 @@ export const COMPACT_KIT: readonly DrumSpec[] = [
   {
     id: 'snare',
     kind: 'drum',
-    placement: { position: [0, 0.86, -0.5], radius: 0.17, depth: 0.14, tilt: 0.32 },
+    placement: { position: [-0.2, 0.82, -0.52], radius: 0.19, depth: 0.15, tilt: 0.1 },
     zones: [
       { key: 'kick', side: 'left' },
       { key: 'snare', side: 'right' },
@@ -31,7 +33,7 @@ export const COMPACT_KIT: readonly DrumSpec[] = [
   {
     id: 'tom',
     kind: 'drum',
-    placement: { position: [0, 1.12, -0.74], radius: 0.165, depth: 0.22, tilt: 0.45 },
+    placement: { position: [-0.03, 1.07, -0.8], radius: 0.15, depth: 0.22, tilt: 0.45 },
     zones: [
       { key: 'tom1', side: 'left' },
       { key: 'tom2', side: 'right' },
@@ -42,14 +44,15 @@ export const COMPACT_KIT: readonly DrumSpec[] = [
   {
     id: 'hihat',
     kind: 'hihat',
-    placement: { position: [-0.36, 1.0, -0.52], radius: 0.15 },
+    placement: { position: [-0.53, 1.03, -0.4], radius: 0.16 },
     zones: [{ key: 'crash', side: 'whole' }],
     playsFor: ['hihat', 'crash'],
   },
   {
     id: 'ride',
     kind: 'cymbal',
-    placement: { position: [0.36, 1.2, -0.68], radius: 0.23, tilt: 0.55 },
+    // between where the mid and floor toms would be, low and nearly flat: jazz
+    placement: { position: [0.4, 0.98, -0.62], radius: 0.24, tilt: 0.22 },
     zones: [{ key: 'ride', side: 'whole' }],
     playsFor: ['ride'],
   },

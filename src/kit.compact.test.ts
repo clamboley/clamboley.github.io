@@ -33,7 +33,7 @@ describe('kits as physical pieces', () => {
   it('keeps the compact kit narrow and in front of the drummer', () => {
     for (const piece of COMPACT_KIT) {
       const [x, y, z] = piece.placement.position;
-      expect(Math.abs(x)).toBeLessThan(0.5);
+      expect(Math.abs(x)).toBeLessThan(0.6);
       expect(y).toBeGreaterThan(0);
       expect(z).toBeLessThan(0);
     }

@@ -50,7 +50,7 @@ export const FULL_RANGES: GazeRanges = {
   basePitch: BASE_PITCH,
 };
 /** The compact kit sits within ±30° and a little lower: a short drag covers it. */
-export const COMPACT_RANGES: GazeRanges = { yaw: 0.6, pitch: 0.5, basePitch: -0.62 };
+export const COMPACT_RANGES: GazeRanges = { yaw: 0.6, pitch: 0.5, basePitch: -0.5 };
 
 /** Pointer position normalised to [-1, 1] (x right, y up) → gaze. */
 export function gazeFromPointer(nx: number, ny: number, ranges: GazeRanges = FULL_RANGES): Gaze {

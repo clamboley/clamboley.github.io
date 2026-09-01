@@ -59,6 +59,8 @@ export interface Placement {
   depth?: number;
   /** Rotation around x, radians (positive = top face towards the drummer). */
   tilt?: number;
+  /** Rotation around the vertical axis, radians (a kick turned to face the drummer). */
+  yaw?: number;
 }
 
 export interface KitElement {
