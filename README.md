@@ -17,7 +17,7 @@ Vite · TypeScript · Three.js · Web Audio API · site 100 % statique.
 
 ```sh
 npm install
-npm run dev        # http://127.0.0.1:5173 (en dev, la redirection propose un retour sur scène)
+npm run dev        # http://127.0.0.1:5173
 npm run check      # lint + format + typecheck + tests + build, ce que la CI exécute
 npm run build      # → dist/   (BASE_PATH=/sous-chemin/ pour un déploiement hors racine)
 npm run preview    # sert dist/ ; ajouter ?stay à l'URL pour ne pas quitter la page au clic

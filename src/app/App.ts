@@ -83,8 +83,6 @@ export interface AppOptions {
   container: HTMLElement;
   hud: Hud;
   overlay: RedirectOverlay;
-  /** Show a way back instead of navigating (development, `?stay`). */
-  stayOnRedirect: boolean;
   quality: QualityProfile;
 }
 
@@ -116,7 +114,6 @@ export class App {
   private readonly timer = new Timer();
   private readonly hud: Hud;
   private readonly overlay: RedirectOverlay;
-  private readonly stayOnRedirect: boolean;
   readonly quality: QualityProfile;
 
   private pendingHits: ScheduledHit[] = [];
@@ -126,11 +123,10 @@ export class App {
   private fillSamplesRequested = false;
   private frameHandle = 0;
 
-  constructor({ container, hud, overlay, stayOnRedirect, quality }: AppOptions) {
+  constructor({ container, hud, overlay, quality }: AppOptions) {
     this.hud = hud;
     this.quality = quality;
     this.overlay = overlay;
-    this.stayOnRedirect = stayOnRedirect;
 
     const motion = readMotionPrefs();
     const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
@@ -290,13 +286,17 @@ export class App {
       case 'redirect':
         this.hud.setTarget(null);
         this.sticks.hide();
-        this.overlay.show(KIT_BY_KEY[next.target], { stay: this.stayOnRedirect });
+        this.overlay.show(KIT_BY_KEY[next.target]);
         break;
     }
   };
 
   /** Escape: the plain list of destinations over the scene, and back. */
   private toggleMenu(): void {
+    if (this.fsm.state.name === 'redirect') {
+      this.returnToStage(); // Escape on the destination card: back to the drums
+      return;
+    }
     if (this.menu.isOpen) {
       this.menu.hide();
       this.keyboard.setMenu(false);

@@ -9,7 +9,7 @@ import type { QualityProfile } from './util/quality.ts';
  * and the post-processing chain are only downloaded when the device gets
  * the scene at all.
  */
-export function bootScene(quality: QualityProfile, stayOnRedirect: boolean): App {
+export function bootScene(quality: QualityProfile): App {
   const overlay = new RedirectOverlay(mustGet('redirect'), () => {
     app.returnToStage();
   });
@@ -17,7 +17,6 @@ export function bootScene(quality: QualityProfile, stayOnRedirect: boolean): App
     container: mustGet('stage'),
     hud: new Hud(mustGet('hud')),
     overlay,
-    stayOnRedirect,
     quality,
   });
   app.start();

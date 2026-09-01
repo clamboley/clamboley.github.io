@@ -15,11 +15,10 @@ if (fallback) {
   showFallback({ offer3d: webgl });
 } else {
   const quality = resolveQuality(hints, params.get('quality'));
-  const stayOnRedirect = import.meta.env.DEV || params.has('stay');
   // the scene (three.js included) is a separate chunk: only fetched when it will run
   import('./boot.ts')
     .then(({ bootScene }) => {
-      const app = bootScene(quality, stayOnRedirect);
+      const app = bootScene(quality);
       // debugging hook, development only
       if (import.meta.env.DEV) (window as unknown as { app: unknown }).app = app;
     })

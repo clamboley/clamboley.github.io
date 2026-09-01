@@ -198,21 +198,41 @@ body.is-aiming #stage canvas {
   font-size: 13px;
   color: #7d74a0;
 }
+.redirect-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 26px;
+}
+.redirect-go,
 .redirect-back {
-  display: none;
-  margin-top: 22px;
   padding: 10px 22px;
-  border: 1px solid rgba(185, 176, 214, 0.45);
   border-radius: 99px;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+.redirect-go {
+  border: 1px solid transparent;
+  background: #fff;
+  color: #14101f;
+  font-weight: 600;
+}
+.redirect-go:hover,
+.redirect-go:focus-visible {
+  background: var(--accent);
+  color: #fff;
+  outline: none;
+}
+.redirect-back {
+  border: 1px solid rgba(185, 176, 214, 0.45);
   background: none;
   color: var(--ink);
-  font: inherit;
-  font-size: 13.5px;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-#redirect.is-staying .redirect-back {
-  display: inline-block;
 }
 .redirect-back:hover,
 .redirect-back:focus-visible {

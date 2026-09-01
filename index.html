@@ -58,13 +58,16 @@
       </div>
     </div>
 
-    <div id="redirect" role="status" aria-live="polite">
+    <div id="redirect" role="dialog" aria-live="polite" aria-label="Prochaine destination">
       <div class="redirect-panel">
         <div class="redirect-badge"></div>
-        <div class="redirect-to">redirection vers</div>
+        <div class="redirect-to">prochaine destination</div>
         <div class="redirect-destination"></div>
         <div class="redirect-url"></div>
-        <button class="redirect-back" type="button">Revenir sur scène</button>
+        <div class="redirect-actions">
+          <a class="redirect-go" href="#">Y aller</a>
+          <button class="redirect-back" type="button">Revenir sur scène</button>
+        </div>
       </div>
     </div>
 
