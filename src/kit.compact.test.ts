@@ -39,4 +39,14 @@ describe('kits as physical pieces', () => {
     }
     expect(FULL_KIT).toHaveLength(KIT.length);
   });
+  it('gives every phone piece the fill Corentin chose for it', () => {
+    const fills = Object.fromEntries(COMPACT_KIT.map((spec) => [spec.id, spec.fill]));
+    expect(fills).toEqual({
+      kick: 'kick',
+      snare: 'snare',
+      tom: 'floor',
+      hihat: 'hihat',
+      ride: 'ride',
+    });
+  });
 });

@@ -18,6 +18,7 @@ export const COMPACT_KIT: readonly DrumSpec[] = [
       { key: 'hihat', side: 'right' },
     ],
     playsFor: ['kick'],
+    fill: 'kick', // placeholder until Corentin picks one
   },
   {
     id: 'snare',
@@ -29,6 +30,7 @@ export const COMPACT_KIT: readonly DrumSpec[] = [
     ],
     playsFor: ['snare'],
     support: 'stand',
+    fill: 'snare', // Smells Like Teen Spirit, both halves
   },
   {
     id: 'tom',
@@ -40,6 +42,7 @@ export const COMPACT_KIT: readonly DrumSpec[] = [
     ],
     playsFor: ['tom1', 'tom2', 'floor'],
     support: 'mount',
+    fill: 'floor', // the floor tom's fill, both halves
   },
   {
     id: 'hihat',
@@ -48,6 +51,7 @@ export const COMPACT_KIT: readonly DrumSpec[] = [
     placement: { position: [-0.38, 1.05, -0.45], radius: 0.16 },
     zones: [{ key: 'crash', side: 'whole' }],
     playsFor: ['hihat', 'crash'],
+    fill: 'hihat', // Rosanna shuffle
   },
   {
     id: 'ride',
@@ -57,5 +61,6 @@ export const COMPACT_KIT: readonly DrumSpec[] = [
     placement: { position: [0.43, 0.98, -0.62], radius: 0.31, tilt: 0.22, roll: 0.2 },
     zones: [{ key: 'ride', side: 'whole' }],
     playsFor: ['ride'],
+    fill: 'ride', // Take Five
   },
 ];

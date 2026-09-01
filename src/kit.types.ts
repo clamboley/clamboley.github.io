@@ -100,4 +100,6 @@ export interface DrumSpec {
   zones: readonly DrumZone[];
   playsFor: readonly KitKey[];
   support?: DrumSupport;
+  /** The element whose fill this piece plays, whichever of its zones is struck (default: the zone's own). */
+  fill?: KitKey;
 }

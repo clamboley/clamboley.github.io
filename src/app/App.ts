@@ -376,7 +376,7 @@ export class App {
       return;
     }
     if (state.name !== 'hover') return;
-    const element = KIT_BY_KEY[state.target];
+    const fill = this.kit.fillFor(state.target);
 
     // lock input right away; the fill itself waits for a live audio clock
     this.audio.unlock();
@@ -387,15 +387,15 @@ export class App {
 
     void this.audio.whenRunning().then(() => {
       if (this.fsm.state.name !== 'fill') return;
-      const start = this.audio.playFill(element.fill, (key) => KIT_BY_KEY[key].voice);
-      this.pendingHits = element.fill.hits
+      const start = this.audio.playFill(fill, (key) => KIT_BY_KEY[key].voice);
+      this.pendingHits = fill.hits
         .map((hit) => ({ at: start + hit.t, key: hit.key, velocity: hit.velocity }))
         .sort((a, b) => a.at - b.at);
-      this.fillEndsAt = start + fillDuration(element.fill);
+      this.fillEndsAt = start + fillDuration(fill);
       this.audio.cheer(start + 0.75);
 
       const strikes: Strike[] = [];
-      for (const hit of element.fill.hits) {
+      for (const hit of fill.hits) {
         if (hit.foot === true) continue; // pedal hi-hat: the foot plays it
         const point = this.kit.strikePoint(hit.key);
         if (point)

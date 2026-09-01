@@ -17,7 +17,7 @@ import {
   type Object3D,
   type Texture,
 } from 'three';
-import type { DrumSpec, DrumZone, KitElement, KitKey, ZoneSide } from '../kit.types.ts';
+import type { DrumSpec, DrumZone, Fill, KitElement, KitKey, ZoneSide } from '../kit.types.ts';
 import { cylinderBetween, cymbalGeometry, merge } from './geometry.ts';
 import {
   createKitMaterials,
@@ -29,6 +29,7 @@ import {
 import { drumHeadTexture, headMaskTexture, splitHeadTexture } from './textures.ts';
 
 const HIT_PADDING = 0.09; // metres added around each element for aiming
+const CYMBAL_PADDING = 0.03; // thinner margin around a cymbal's disc: its neighbours sit right below
 const GLOW_LAMBDA = 7.7; // hover glow response
 const FLASH_LAMBDA = 6.3; // stroke flash decay
 const KICK_FRONT_OFFSET = 0.02; // the batter head sits this far inside the hoop
@@ -95,6 +96,12 @@ export class DrumKit {
   }
 
   /** World point of a destination's zone (where the keyboard focus looks). */
+  /** The fill a strike on this destination plays: the piece may impose its own. */
+  fillFor(key: KitKey): Fill {
+    const owner = this.zoneOwner.get(key);
+    return this.elements[owner?.view.spec.fill ?? key].fill;
+  }
+
   aimPoint(key: KitKey): Vector3 {
     const owner = this.zoneOwner.get(key);
     if (!owner) return new Vector3(0, 1, -1);
@@ -227,15 +234,36 @@ export class DrumKit {
     for (const key of spec.playsFor) this.voiceOwner.set(key, view);
 
     if (spec.zones.length === 1) {
-      const proxy = new Mesh(
-        new SphereGeometry(placement.radius + HIT_PADDING, 10, 10),
-        new MeshBasicMaterial({ visible: false }),
-      );
-      proxy.position.copy(position);
-      this.root.add(proxy);
+      const proxy =
+        kind === 'cymbal' || kind === 'hihat'
+          ? this.cymbalProxy(group, placement.radius, kind === 'hihat')
+          : new Mesh(
+              new SphereGeometry(placement.radius + HIT_PADDING, 10, 10),
+              new MeshBasicMaterial({ visible: false }),
+            );
+      if (proxy.parent === null) {
+        proxy.position.copy(position);
+        this.root.add(proxy);
+      }
       this.proxies.push(proxy);
       this.keyByProxy.set(proxy, first.key);
     }
+  }
+
+  /**
+   * A cymbal is aimed through a flat puck around its disc, inside its own
+   * frame so it follows the tilt: a sphere would swallow whatever sits
+   * below the cymbal (the snare under the hi-hat, the kick under the ride).
+   */
+  private cymbalProxy(group: Group, radius: number, hihat: boolean): Mesh {
+    const r = radius + CYMBAL_PADDING;
+    const proxy = new Mesh(
+      new CylinderGeometry(r, r, hihat ? 0.12 : 0.07, 24),
+      new MeshBasicMaterial({ visible: false }),
+    );
+    proxy.position.y = hihat ? -0.015 : 0;
+    group.add(proxy);
+    return proxy;
   }
 
   /** The batter head's material: one logo, or two with a seam between them. */
