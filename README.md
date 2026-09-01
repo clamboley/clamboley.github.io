@@ -61,3 +61,7 @@ Les kits Sketchfab CC-BY repérés pour remplacer le kit procédural (téléchar
 
 GitHub Pages via `.github/workflows/ci.yml` (push sur `main` → build → déploiement). Le repo GitHub s'appelle `clamboley.github.io` pour que le site soit servi à la racine ; `/deep-notes/` reste un site de projet à côté.
 Le dépôt GitLab garde la même vérification dans `.gitlab-ci.yml`.
+
+## Licence
+
+Code sous licence [MIT](LICENSE). Les assets ont leurs propres licences : modèles 3D générés avec TRELLIS.2 (MIT) à partir d'images Z-Image-Turbo (Apache-2.0), ambiance de foule « Free Crowd Cheering Sounds » de Gregor Quendel (CC BY 4.0), fills et clic rendus avec MuseScore (Muse Sounds / MS Basic).

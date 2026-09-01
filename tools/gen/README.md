@@ -1,6 +1,6 @@
 # Génération d'assets 3D (TRELLIS.2 sur le cluster Slurm)
 
-Image → GLB PBR avec [TRELLIS.2](https://github.com/microsoft/TRELLIS.2) (MIT) sur `un nœud GPU` (H100).
+Image → GLB PBR avec [TRELLIS.2](https://github.com/microsoft/TRELLIS.2) (MIT) sur un nœud H100.
 
 - Poids (partage CephFS, `noexec`) : `$MODELS_DIR/3D/{TRELLIS.2-4B,dinov3-vitl16-pretrain-lvd1689m,BiRefNet}`.
 - Pipeline patché (chemins locaux, détourage MIT) : `$SHARE/pipeline/`.
