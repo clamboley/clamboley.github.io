@@ -471,12 +471,16 @@ export class DrumKit {
       new Mesh(new CylinderGeometry(0.005, 0.005, TILTER_LENGTH, 8), this.materials.chrome),
     );
     const tilt = placement.tilt ?? 0.5;
+    const roll = placement.roll ?? 0;
     group.rotation.x = tilt;
+    group.rotation.z = roll;
 
     // straight stand under the centre, ending well below the lowest point of the tilted
     // cymbal, then a short neck up to the tilter along the cymbal's axis
     const tubeTop = new Vector3(position.x, position.y - STAND_DROP, position.z);
-    const normal = new Vector3(0, 1, 0).applyAxisAngle(new Vector3(1, 0, 0), tilt);
+    const normal = new Vector3(0, 1, 0)
+      .applyAxisAngle(new Vector3(0, 0, 1), roll)
+      .applyAxisAngle(new Vector3(1, 0, 0), tilt);
     const tilterBase = position.clone().addScaledVector(normal, -TILTER_LENGTH / 2);
     this.addStand(position.x, position.z, position.y - STAND_DROP, 0.42);
     this.addStatic(cylinderBetween(tubeTop, tilterBase, 0.008), this.materials.chrome);

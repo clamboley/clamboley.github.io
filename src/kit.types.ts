@@ -61,6 +61,8 @@ export interface Placement {
   tilt?: number;
   /** Rotation around the vertical axis, radians (a kick turned to face the drummer). */
   yaw?: number;
+  /** Rotation around the depth axis, radians (positive = the cymbal leans to the drummer's left). */
+  roll?: number;
 }
 
 export interface KitElement {
