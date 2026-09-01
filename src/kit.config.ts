@@ -39,7 +39,7 @@ export const KIT: readonly KitElement[] = [
   {
     key: 'tom2',
     kind: 'drum',
-    destination: { label: 'LinkedIn', url: 'https://www.linkedin.com/in/clamboley' },
+    destination: { label: 'LinkedIn', url: 'https://www.linkedin.com/in/corentinlamboley' },
     logo: { glyph: 'in', color: '#0a8ac2' },
     placement: { position: [0.18, 1.07, -0.81], radius: 0.165, depth: 0.24, tilt: 0.45 },
     voice: { type: 'tom', pitch: 165 },
