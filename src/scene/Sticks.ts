@@ -10,7 +10,7 @@ import {
 import { woodTexture } from './textures.ts';
 import type { KitKey } from '../kit.types.ts';
 
-const LENGTH = 0.41; // metres, a 5A stick
+const LENGTH = 0.39; // metres, a 7A stick
 const LIFT = 0.17; // seconds between the start of the swing and the contact
 const LIFT_HEIGHT = 0.16; // metres, the raised tip above the target before the wrist snaps
 const COCK = 0.65; // share of LIFT spent bringing the raised stick over the target; the rest is the snap
@@ -69,24 +69,29 @@ const PREFERRED: Partial<Record<KitKey, Side>> = {
 };
 
 /**
- * A 5A stick turned on a lathe: rounded butt, straight shaft, a long
- * shoulder thinning into the neck, and an acorn tip. Profile as (radius,
- * distance from the butt) in metres.
+ * A 7A stick turned on a lathe, from Corentin's measurements: rounded butt,
+ * a plain cylinder over two thirds, a long cone down to the base of the
+ * olive, and a nearly round olive. Profile as (radius, distance from the
+ * butt) in metres.
  */
 const PROFILE: readonly (readonly [number, number])[] = [
   [0, 0],
-  [0.0048, 0.0012],
-  [0.0061, 0.004],
-  [0.0065, 0.009],
-  [0.0065, 0.25], // shaft, 13 mm
-  [0.0058, 0.31], // shoulder
-  [0.0049, 0.35],
-  [0.0041, 0.372], // neck
-  [0.0042, 0.38],
-  [0.0047, 0.389], // small rounded tip, barely wider than the neck
-  [0.0044, 0.396],
-  [0.0028, 0.403],
-  [0, LENGTH],
+  [0.005, 0.001],
+  [0.0065, 0.003],
+  [0.00675, 0.006], // rounded butt
+  [0.00675, 0.26], // plain cylinder over two thirds, 13.5 mm
+  [0.0063, 0.3], // then a long cone down to 7 mm at the base of the olive
+  [0.0053, 0.34],
+  [0.0042, 0.368],
+  [0.0035, 0.38],
+  [0.0036, 0.382],
+  [0.00429, 0.3835],
+  [0.0045, 0.385],
+  [0.00429, 0.3865],
+  [0.0036, 0.388],
+  [0.0027, 0.389],
+  [0.00196, 0.3895],
+  [0, LENGTH], // the olive: nearly round, 9 mm, a touch longer than wide
 ];
 
 function stickGroup(material: MeshStandardMaterial): Group {
