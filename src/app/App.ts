@@ -341,9 +341,9 @@ export class App {
 
   /** Browsers only let audio start from a gesture: the first one wakes the crowd. */
   private readonly onFirstGesture = (): void => {
+    this.audio.unlock(); // must come first: preloading needs the audio graph
     this.preloadFillSamples();
     void this.audio.preload(withBase(site.countIn.sample)).catch(() => undefined);
-    this.audio.unlock();
     void this.audio
       .startAmbience(withBase(site.ambience.file), site.ambience.level)
       .catch((error: unknown) => {
@@ -447,7 +447,8 @@ export class App {
       const { sample } = fill;
       if (sample === null) continue;
       void this.audio.preload(sample).catch((error: unknown) => {
-        console.warn(`Fill sample ${sample} unavailable, will synthesize`, error);
+        console.warn(`Fill sample ${sample} unavailable, retrying on the next gesture`, error);
+        this.fillSamplesRequested = false; // a later gesture tries again
       });
     }
   }
