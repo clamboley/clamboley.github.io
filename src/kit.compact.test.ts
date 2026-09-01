@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PHONE_KICK_FILL } from './audio/songFills.ts';
+import { PHONE_HIHAT_FILL, PHONE_KICK_FILL } from './audio/songFills.ts';
 import { COMPACT_KIT } from './kit.compact.ts';
 import { FULL_KIT, KIT } from './kit.config.ts';
 import type { KitKey } from './kit.types.ts';
@@ -46,7 +46,7 @@ describe('kits as physical pieces', () => {
       kick: PHONE_KICK_FILL,
       snare: 'snare',
       tom: 'floor',
-      hihat: 'hihat',
+      hihat: PHONE_HIHAT_FILL,
       ride: 'ride',
     });
   });

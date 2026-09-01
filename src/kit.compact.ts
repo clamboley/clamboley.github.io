@@ -1,4 +1,4 @@
-import { PHONE_KICK_FILL } from './audio/songFills.ts';
+import { PHONE_HIHAT_FILL, PHONE_KICK_FILL } from './audio/songFills.ts';
 import type { DrumSpec } from './kit.types.ts';
 
 /**
@@ -52,7 +52,7 @@ export const COMPACT_KIT: readonly DrumSpec[] = [
     placement: { position: [-0.38, 1.05, -0.45], radius: 0.16 },
     zones: [{ key: 'crash', side: 'whole' }],
     playsFor: ['hihat', 'crash'],
-    fill: 'hihat', // Rosanna shuffle
+    fill: PHONE_HIHAT_FILL, // Rosanna shuffle, ending on the ride's bell
   },
   {
     id: 'ride',

@@ -270,3 +270,48 @@ export const PHONE_KICK_FILL: Fill = {
     { t: 2, key: 'ride', velocity: 0.63, hand: 'right', bell: true },
   ],
 };
+
+/**
+ * The phone hi-hat's Rosanna shuffle — Corentin's minimalist rewrite of his
+ * full-kit score: with no crash on the phone kit, the final crash becomes the
+ * ride's bell, struck with the stick's shoulder.
+ */
+export const PHONE_HIHAT_FILL: Fill = {
+  sample: 'samples/fills/hi-hat-minimaliste.wav',
+  hits: [
+    { t: 0, key: 'hihat', velocity: 0.63 },
+    { t: 0, key: 'kick', velocity: 0.63 },
+    { t: 0.25, key: 'snare', velocity: 0.2 },
+    { t: 0.5, key: 'hihat', velocity: 0.63 },
+    { t: 0.75, key: 'hihat', velocity: 0.63 },
+    { t: 1, key: 'snare', velocity: 0.2 },
+    { t: 1.25, key: 'hihat', velocity: 0.63 },
+    { t: 1.25, key: 'kick', velocity: 0.63 },
+    { t: 1.5, key: 'hihat', velocity: 0.76 },
+    { t: 1.5, key: 'snare', velocity: 0.76 },
+    { t: 1.75, key: 'snare', velocity: 0.2 },
+    { t: 2, key: 'hihat', velocity: 0.63 },
+    { t: 2.25, key: 'hihat', velocity: 0.63 },
+    { t: 2.25, key: 'kick', velocity: 0.63 },
+    { t: 2.5, key: 'snare', velocity: 0.2 },
+    { t: 2.75, key: 'hihat', velocity: 0.63 },
+    { t: 3, key: 'hihat', velocity: 0.63 },
+    { t: 3.25, key: 'snare', velocity: 0.2 },
+    { t: 3.5, key: 'hihat', velocity: 0.63 },
+    { t: 3.5, key: 'kick', velocity: 0.63 },
+    { t: 3.75, key: 'hihat', velocity: 0.63 },
+    { t: 4, key: 'snare', velocity: 0.2 },
+    { t: 4.25, key: 'hihat', velocity: 0.63 },
+    { t: 4.5, key: 'hihat', velocity: 0.76 },
+    { t: 4.5, key: 'kick', velocity: 0.76 },
+    { t: 4.5, key: 'snare', velocity: 0.76 },
+    { t: 4.75, key: 'snare', velocity: 0.2 },
+    { t: 5, key: 'hihat', velocity: 0.63 },
+    { t: 5.25, key: 'hihat', velocity: 0.63 },
+    { t: 5.5, key: 'snare', velocity: 0.2 },
+    { t: 5.75, key: 'hihat', velocity: 0.63 },
+    { t: 5.75, key: 'kick', velocity: 0.63 },
+    { t: 6, key: 'kick', velocity: 0.63 },
+    { t: 6, key: 'ride', velocity: 0.63, hand: 'right', bell: true },
+  ],
+};
