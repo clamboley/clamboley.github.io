@@ -1,6 +1,7 @@
 import { FogExp2, Raycaster, Scene, Timer, Vector2, Vector3, type WebGLRenderer } from 'three';
 import { assets } from '../assets.config.ts';
 import { AudioEngine } from '../audio/AudioEngine.ts';
+import { PHONE_KICK_FILL } from '../audio/songFills.ts';
 import { fillDuration } from '../audio/fills.ts';
 import { KeyboardInput } from '../input/KeyboardInput.ts';
 import { LookInput, TAP_SLOP } from '../input/LookInput.ts';
@@ -397,13 +398,14 @@ export class App {
       const strikes: Strike[] = [];
       for (const hit of fill.hits) {
         if (hit.foot === true) continue; // pedal hi-hat: the foot plays it
-        const point = this.kit.strikePoint(hit.key);
+        const point = this.kit.strikePoint(hit.key, hit.bell === true ? 'bell' : 'head');
         if (point)
           strikes.push({
             at: start + hit.t,
             key: hit.key,
             point,
             ...(hit.hand === undefined ? {} : { hand: hit.hand }),
+            ...(hit.bell === true ? { bell: true } : {}),
           });
       }
       this.sticks.play(strikes);
@@ -415,8 +417,8 @@ export class App {
   private preloadFillSamples(): void {
     if (this.fillSamplesRequested) return;
     this.fillSamplesRequested = true;
-    for (const element of KIT) {
-      const { sample } = element.fill;
+    for (const fill of [...KIT.map((element) => element.fill), PHONE_KICK_FILL]) {
+      const { sample } = fill;
       if (sample === null) continue;
       void this.audio.preload(sample).catch((error: unknown) => {
         console.warn(`Fill sample ${sample} unavailable, will synthesize`, error);

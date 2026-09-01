@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { PHONE_KICK_FILL } from './audio/songFills.ts';
 import { COMPACT_KIT } from './kit.compact.ts';
 import { FULL_KIT, KIT } from './kit.config.ts';
 import type { KitKey } from './kit.types.ts';
@@ -42,7 +43,7 @@ describe('kits as physical pieces', () => {
   it('gives every phone piece the fill Corentin chose for it', () => {
     const fills = Object.fromEntries(COMPACT_KIT.map((spec) => [spec.id, spec.fill]));
     expect(fills).toEqual({
-      kick: 'kick',
+      kick: PHONE_KICK_FILL,
       snare: 'snare',
       tom: 'floor',
       hihat: 'hihat',

@@ -1,3 +1,4 @@
+import { PHONE_KICK_FILL } from './audio/songFills.ts';
 import type { DrumSpec } from './kit.types.ts';
 
 /**
@@ -18,7 +19,7 @@ export const COMPACT_KIT: readonly DrumSpec[] = [
       { key: 'hihat', side: 'right' },
     ],
     playsFor: ['kick'],
-    fill: 'kick', // placeholder until Corentin picks one
+    fill: PHONE_KICK_FILL, // his minimalist 120 bpm groove, ending on the ride's bell
   },
   {
     id: 'snare',

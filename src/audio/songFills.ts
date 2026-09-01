@@ -232,3 +232,41 @@ export const SONG_FILLS: Readonly<Record<KitKey, Fill>> = {
     ],
   },
 };
+
+/**
+ * The phone kick's own groove — Corentin's minimalist 120 bpm score. Hi-hats
+ * right hand, snares left; with no crash on the phone kit it ends on the
+ * ride's bell, struck with the stick's shoulder rather than the tip.
+ */
+export const PHONE_KICK_FILL: Fill = {
+  sample: 'samples/fills/grosse-caisse-minimaliste.wav',
+  hits: [
+    { t: 0, key: 'hihat', velocity: 0.63, hand: 'right' },
+    { t: 0, key: 'kick', velocity: 0.63 },
+    { t: 0.125, key: 'hihat', velocity: 0.63, foot: true },
+    { t: 0.125, key: 'snare', velocity: 0.25, hand: 'left' },
+    { t: 0.25, key: 'hihat', velocity: 0.63, hand: 'right' },
+    { t: 0.25, key: 'snare', velocity: 0.25, hand: 'left' },
+    { t: 0.375, key: 'hihat', velocity: 0.63, hand: 'right' },
+    { t: 0.375, key: 'kick', velocity: 0.63 },
+    { t: 0.5, key: 'hihat', velocity: 0.76, foot: true },
+    { t: 0.5, key: 'snare', velocity: 0.76, hand: 'left' },
+    { t: 0.625, key: 'hihat', velocity: 0.63, hand: 'right' },
+    { t: 0.625, key: 'snare', velocity: 0.25, hand: 'left' },
+    { t: 0.75, key: 'hihat', velocity: 0.63, hand: 'right' },
+    { t: 0.875, key: 'snare', velocity: 0.25, hand: 'left' },
+    { t: 1, key: 'hihat', velocity: 0.76, hand: 'right' },
+    { t: 1.125, key: 'snare', velocity: 0.25, hand: 'left' },
+    { t: 1.25, key: 'hihat', velocity: 0.63, hand: 'right' },
+    { t: 1.25, key: 'snare', velocity: 0.25, hand: 'left' },
+    { t: 1.375, key: 'hihat', velocity: 0.63, hand: 'right' },
+    { t: 1.375, key: 'kick', velocity: 0.63 },
+    { t: 1.5, key: 'hihat', velocity: 0.76, hand: 'right' },
+    { t: 1.5, key: 'snare', velocity: 0.76, hand: 'left' },
+    { t: 1.625, key: 'snare', velocity: 0.25, hand: 'left' },
+    { t: 1.75, key: 'hihat', velocity: 0.63, hand: 'right' },
+    { t: 1.875, key: 'snare', velocity: 0.25, hand: 'left' },
+    { t: 2, key: 'kick', velocity: 0.63 },
+    { t: 2, key: 'ride', velocity: 0.63, hand: 'right', bell: true },
+  ],
+};

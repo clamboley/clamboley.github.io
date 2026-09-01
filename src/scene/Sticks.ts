@@ -10,7 +10,9 @@ import {
 import { woodTexture } from './textures.ts';
 import type { KitKey } from '../kit.types.ts';
 
-const LENGTH = 0.39; // metres, a 7A stick
+const LENGTH = 0.39;
+/** How far past the tip the contact moves for a bell stroke (shoulder of the stick). */
+const SHOULDER_REACH = 0.07;
 const LIFT = 0.17; // seconds between the start of the swing and the contact
 const LIFT_HEIGHT = 0.16; // metres, the raised tip above the target before the wrist snaps
 const COCK = 0.65; // share of LIFT spent bringing the raised stick over the target; the rest is the snap
@@ -40,6 +42,8 @@ export interface Strike {
   point: Vector3;
   /** Sticking from the score, if any. */
   hand?: 'left' | 'right';
+  /** Ride bell: contact on the stick's shoulder, the tip overshoots the bell. */
+  bell?: boolean;
 }
 
 type Side = 'left' | 'right';
@@ -214,6 +218,17 @@ export class Sticks {
     this.show();
   }
 
+  /** A bell stroke: the tip overshoots so the stick's shoulder meets the bell. */
+  private bellStrike(side: Side, strike: Strike): Strike {
+    const along = new Vector3()
+      .subVectors(strike.point, this.hand(side).baseAnchor)
+      .setY(0)
+      .normalize();
+    const point = strike.point.clone().addScaledVector(along, SHOULDER_REACH);
+    point.y += 0.012;
+    return { ...strike, point };
+  }
+
   /** Assigns the strokes to the hands and starts playing them. */
   play(strikes: readonly Strike[]): void {
     for (const hand of this.hands) {
@@ -224,7 +239,7 @@ export class Sticks {
     const sorted = [...strikes].sort((a, b) => a.at - b.at);
     const last: Record<Side, number> = { left: -Infinity, right: -Infinity };
     const take = (side: Side, strike: Strike): void => {
-      this.hand(side).strikes.push(strike);
+      this.hand(side).strikes.push(strike.bell === true ? this.bellStrike(side, strike) : strike);
       last[side] = strike.at;
     };
     const single = (strike: Strike): void => {

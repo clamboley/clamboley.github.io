@@ -22,6 +22,8 @@ export interface FillHit {
   foot?: boolean;
   /** Sticking from the score; without it the sticks pick a hand themselves. */
   hand?: 'left' | 'right';
+  /** Ride bell: struck with the stick's shoulder, not the tip. */
+  bell?: boolean;
 }
 
 /**
@@ -100,6 +102,6 @@ export interface DrumSpec {
   zones: readonly DrumZone[];
   playsFor: readonly KitKey[];
   support?: DrumSupport;
-  /** The element whose fill this piece plays, whichever of its zones is struck (default: the zone's own). */
-  fill?: KitKey;
+  /** The fill this piece plays, whichever of its zones is struck: another element's key, a fill of its own, or (default) the zone's own. */
+  fill?: KitKey | Fill;
 }

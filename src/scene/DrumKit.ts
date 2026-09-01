@@ -98,8 +98,9 @@ export class DrumKit {
   /** World point of a destination's zone (where the keyboard focus looks). */
   /** The fill a strike on this destination plays: the piece may impose its own. */
   fillFor(key: KitKey): Fill {
-    const owner = this.zoneOwner.get(key);
-    return this.elements[owner?.view.spec.fill ?? key].fill;
+    const fill = this.zoneOwner.get(key)?.view.spec.fill;
+    if (fill !== undefined && typeof fill !== 'string') return fill;
+    return this.elements[fill ?? key].fill;
   }
 
   aimPoint(key: KitKey): Vector3 {
@@ -120,7 +121,7 @@ export class DrumKit {
   }
 
   /** World point a stick lands on for a voice; null for the kick (played by the foot). */
-  strikePoint(key: KitKey): Vector3 | null {
+  strikePoint(key: KitKey, spot: 'head' | 'bell' = 'head'): Vector3 | null {
     const view = this.voiceOwner.get(key);
     if (!view || view.spec.kind === 'kick') return null;
     const { placement, kind } = view.spec;
@@ -129,7 +130,9 @@ export class DrumKit {
     const local =
       kind === 'drum'
         ? new Vector3(0, (placement.depth ?? 0.2) / 2 + 0.004, placement.radius * 0.35)
-        : new Vector3(0, 0.012, placement.radius * 0.55);
+        : spot === 'bell'
+          ? new Vector3(0, 0.03, 0.01)
+          : new Vector3(0, 0.012, placement.radius * 0.55);
     view.group.updateWorldMatrix(true, false);
     return view.group.localToWorld(local);
   }
