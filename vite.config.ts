@@ -49,8 +49,19 @@ export default defineConfig({
   build: {
     target: 'es2022',
     sourcemap: false,
-    // three.js alone is ~550 kB minified; loading strategy is handled at the optimisation step
+    // three.js alone is ~550 kB minified: it gets its own long-lived chunk,
+    // fetched only when the scene runs (see main.ts)
     chunkSizeWarningLimit: 700,
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          groups: [
+            { name: 'three', test: /node_modules[\\/]three[\\/]/ },
+            { name: 'postprocessing', test: /node_modules[\\/]postprocessing[\\/]/ },
+          ],
+        },
+      },
+    },
   },
   server: {
     host: '127.0.0.1',

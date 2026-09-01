@@ -1,9 +1,5 @@
 import './styles/main.css';
-import { App } from './app/App.ts';
 import { showFallback } from './ui/Fallback.ts';
-import { Hud } from './ui/Hud.ts';
-import { RedirectOverlay } from './ui/RedirectOverlay.ts';
-import { mustGet } from './util/dom.ts';
 import { needsFallback, readDeviceHints, resolveQuality } from './util/quality.ts';
 import { supportsWebGL } from './util/webgl.ts';
 
@@ -16,18 +12,17 @@ const fallback =
 if (fallback) {
   showFallback();
 } else {
+  const quality = resolveQuality(hints, params.get('quality'));
   const stayOnRedirect = import.meta.env.DEV || params.has('stay');
-  const overlay = new RedirectOverlay(mustGet('redirect'), () => {
-    app.returnToStage();
-  });
-  const app = new App({
-    container: mustGet('stage'),
-    hud: new Hud(mustGet('hud')),
-    overlay,
-    stayOnRedirect,
-    quality: resolveQuality(hints, params.get('quality')),
-  });
-  app.start();
-  // debugging hook, development only
-  if (import.meta.env.DEV) (window as unknown as { app: App }).app = app;
+  // the scene (three.js included) is a separate chunk: only fetched when it will run
+  import('./boot.ts')
+    .then(({ bootScene }) => {
+      const app = bootScene(quality, stayOnRedirect);
+      // debugging hook, development only
+      if (import.meta.env.DEV) (window as unknown as { app: unknown }).app = app;
+    })
+    .catch((error: unknown) => {
+      console.error('Scene failed to start, showing the navigation', error);
+      showFallback();
+    });
 }
