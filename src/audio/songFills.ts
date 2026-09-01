@@ -1,21 +1,9 @@
-import type { Fill, FillHit, KitKey } from '../kit.types.ts';
-
-/** One stroke of a fill: [beat, element, velocity], beats at the song's tempo. */
-type Stroke = readonly [number, KitKey, number];
-
-function fill(bpm: number, strokes: readonly Stroke[]): Fill {
-  const beat = 60 / bpm;
-  const hits: FillHit[] = strokes
-    .map(([b, key, velocity]) => ({ t: Math.round(b * beat * 1000) / 1000, key, velocity }))
-    .sort((a, b) => a.t - b.t);
-  return { sample: null, hits };
-}
+import type { Fill, KitKey } from '../kit.types.ts';
 
 /**
- * One signature fill per element — rhythmic homages to famous drum moments,
- * re-written by ear for this kit's voices. Each fill ends with an accent on
- * the clicked element (the kick, which cannot accent itself, ends on the
- * crash), and stays short enough for the redirect to feel responsive.
+ * One fill per element, all from Corentin's MuseScore scores: the hits (with
+ * his sticking) come from the MIDI export through tools/fills/midi2fill.mjs,
+ * the sound is his Muse Sounds render (`sample`). See tools/fills/README.md.
  */
 export const SONG_FILLS: Readonly<Record<KitKey, Fill>> = {
   // À propos — a bass-drum-driven fill, from Corentin's MuseScore score
@@ -105,19 +93,31 @@ export const SONG_FILLS: Readonly<Record<KitKey, Fill>> = {
       { t: 2.188, key: 'floor', velocity: 0.63, hand: 'right' },
     ],
   },
-  // LinkedIn — the rolling tom pattern under the intro of "Sober"
-  tom2: fill(74, [
-    [0, 'kick', 0.9],
-    [0.25, 'tom2', 0.55],
-    [0.5, 'tom2', 0.5],
-    [0.75, 'kick', 0.85],
-    [1, 'tom2', 0.85],
-    [1.25, 'tom2', 0.55],
-    [1.5, 'kick', 0.85],
-    [1.75, 'tom2', 0.9],
-    [2, 'floor', 0.85],
-    [2.25, 'tom2', 1],
-  ]),
+  // LinkedIn — a mid-tom fill, from Corentin's MuseScore score
+  // (150 bpm, --tempo 150; sticking from Corentin, --sticking RLLRLLRLRLRLR; two floor voices → one floor)
+  tom2: {
+    sample: 'samples/fills/mid-tom.wav',
+    hits: [
+      { t: 0, key: 'tom1', velocity: 0.76, hand: 'right' },
+      { t: 0.1, key: 'snare', velocity: 0.3, hand: 'left' },
+      { t: 0.2, key: 'snare', velocity: 0.3, hand: 'left' },
+      { t: 0.3, key: 'kick', velocity: 0.41 },
+      { t: 0.4, key: 'tom2', velocity: 0.76, hand: 'right' },
+      { t: 0.5, key: 'snare', velocity: 0.3, hand: 'left' },
+      { t: 0.6, key: 'snare', velocity: 0.3, hand: 'left' },
+      { t: 0.7, key: 'kick', velocity: 0.41 },
+      { t: 0.8, key: 'floor', velocity: 0.63, hand: 'right' },
+      { t: 0.9, key: 'floor', velocity: 0.63, hand: 'left' },
+      { t: 1, key: 'kick', velocity: 0.41 },
+      { t: 1.1, key: 'floor', velocity: 0.63, hand: 'right' },
+      { t: 1.2, key: 'floor', velocity: 0.63, hand: 'left' },
+      { t: 1.3, key: 'kick', velocity: 0.41 },
+      { t: 1.4, key: 'floor', velocity: 0.63, hand: 'right' },
+      { t: 1.5, key: 'floor', velocity: 0.63, hand: 'left' },
+      { t: 1.6, key: 'crash', velocity: 0.63, hand: 'right' },
+      { t: 1.6, key: 'kick', velocity: 0.41 },
+    ],
+  },
   // Blog — a floor-tom fill, from Corentin's MuseScore score
   // (MIDI says 57 bpm, the score is at 252: --tempo 252; sticking from Corentin, --sticking BRLRL)
   floor: {
