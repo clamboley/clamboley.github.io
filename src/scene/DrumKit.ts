@@ -124,13 +124,12 @@ export class DrumKit {
     const view = this.voiceOwner.get(key);
     if (!view || view.spec.kind === 'kick') return null;
     const { placement, kind } = view.spec;
-    // a voice that is also a destination of this piece lands on its own half
-    const zone = view.spec.zones.find((z) => z.key === key);
-    const x = this.sideOffset(zone?.side ?? 'whole', placement.radius);
+    // strokes land in the middle of the head whatever its zones: drummers aim
+    // for the centre, split logos or not
     const local =
       kind === 'drum'
-        ? new Vector3(x, (placement.depth ?? 0.2) / 2 + 0.004, placement.radius * 0.35)
-        : new Vector3(x * 0.5, 0.012, placement.radius * 0.55);
+        ? new Vector3(0, (placement.depth ?? 0.2) / 2 + 0.004, placement.radius * 0.35)
+        : new Vector3(0, 0.012, placement.radius * 0.55);
     view.group.updateWorldMatrix(true, false);
     return view.group.localToWorld(local);
   }
