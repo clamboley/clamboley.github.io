@@ -3,7 +3,7 @@ import {
   LatheGeometry,
   MathUtils,
   Mesh,
-  MeshStandardMaterial,
+  MeshPhysicalMaterial,
   Vector2,
   Vector3,
 } from 'three';
@@ -94,11 +94,17 @@ const PROFILE: readonly (readonly [number, number])[] = [
   [0, LENGTH], // the olive: nearly round, 9 mm, a touch longer than wide
 ];
 
-function stickGroup(material: MeshStandardMaterial): Group {
+function stickGroup(material: MeshPhysicalMaterial): Group {
   const geometry = new LatheGeometry(
     PROFILE.map(([r, z]) => new Vector2(r, z)),
-    22,
+    32,
   ).rotateX(Math.PI / 2); // along +z, butt at the origin
+  // the lathe spreads v evenly over the profile points; the print wants it
+  // proportional to the distance from the butt
+  const position = geometry.getAttribute('position');
+  const uv = geometry.getAttribute('uv');
+  for (let i = 0; i < uv.count; i++) uv.setY(i, position.getZ(i) / LENGTH);
+  uv.needsUpdate = true;
   const mesh = new Mesh(geometry, material);
   mesh.castShadow = true;
   const group = new Group();
@@ -114,12 +120,14 @@ function stickGroup(material: MeshStandardMaterial): Group {
 export class Sticks {
   readonly root = new Group();
 
-  // pale hickory with a light varnish; the grain runs along the lathe's v
-  private readonly material = new MeshStandardMaterial({
+  // signature hickory under a satin varnish (texture: grain, lacquered grip, print)
+  private readonly material = new MeshPhysicalMaterial({
     map: woodTexture(),
-    color: 0xf2e2c8,
-    roughness: 0.48, // lightly varnished hickory
-    envMapIntensity: 0.4,
+    color: 0xf4e6cc,
+    roughness: 0.55,
+    clearcoat: 0.6, // satin varnish: the stage lights glide along the shaft
+    clearcoatRoughness: 0.3,
+    envMapIntensity: 0.45,
     transparent: true,
     opacity: 0,
   });

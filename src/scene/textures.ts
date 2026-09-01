@@ -212,30 +212,43 @@ export function glowSpriteTexture(): Texture {
 }
 
 /**
- * Pale hickory for the sticks: a warm base with fine darker grain lines
- * running along the length (v of the lathe), a few of them wandering.
+ * Signature 7A sticks: hickory with a marked grain and a little figure, a
+ * lacquered grip at the butt (deep burgundy, gold pinstripe) carrying the
+ * printed name. u wraps around the stick, v runs from the butt (0) to the
+ * tip (1) proportionally to the length (see Sticks.ts).
  */
 export function woodTexture(): CanvasTexture {
-  const width = 128;
-  const height = 512;
+  const width = 256;
+  const height = 1024;
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('2D canvas unavailable');
+  const random = seededRandom(5);
+
+  // hickory: warm base, a soft light-and-dark figure across, fine grain along
   const base = ctx.createLinearGradient(0, 0, width, 0);
-  base.addColorStop(0, '#d8b98d');
-  base.addColorStop(0.5, '#e3c79c');
-  base.addColorStop(1, '#d4b384');
+  base.addColorStop(0, '#cfae7e');
+  base.addColorStop(0.35, '#e0c395');
+  base.addColorStop(0.7, '#d6b384');
+  base.addColorStop(1, '#c9a674');
   ctx.fillStyle = base;
   ctx.fillRect(0, 0, width, height);
-  const random = seededRandom(5);
-  for (let i = 0; i < 46; i++) {
+  for (let i = 0; i < 14; i++) {
+    const y = random() * height;
+    const figure = ctx.createLinearGradient(0, y - 60, 0, y + 60);
+    figure.addColorStop(0, 'rgba(120, 80, 40, 0)');
+    figure.addColorStop(0.5, `rgba(120, 80, 40, ${String(0.05 + random() * 0.07)})`);
+    figure.addColorStop(1, 'rgba(120, 80, 40, 0)');
+    ctx.fillStyle = figure;
+    ctx.fillRect(0, y - 60, width, 120);
+  }
+  for (let i = 0; i < 90; i++) {
     const x0 = random() * width;
-    const wander = (random() - 0.5) * 18;
-    const alpha = 0.05 + random() * 0.12;
-    ctx.strokeStyle = `rgba(110, 72, 34, ${String(alpha)})`;
-    ctx.lineWidth = 0.6 + random() * 1.6;
+    const wander = (random() - 0.5) * 22;
+    ctx.strokeStyle = `rgba(96, 60, 26, ${String(0.06 + random() * 0.16)})`;
+    ctx.lineWidth = 0.5 + random() * 1.4;
     ctx.beginPath();
     ctx.moveTo(x0, 0);
     ctx.bezierCurveTo(
@@ -243,21 +256,47 @@ export function woodTexture(): CanvasTexture {
       height * 0.33,
       x0 - wander,
       height * 0.66,
-      x0 + wander * 0.4,
+      x0 + wander * 0.5,
       height,
     );
     ctx.stroke();
   }
-  // a faint darker ring where the varnish gathers at the neck
-  const neck = ctx.createLinearGradient(0, height * 0.9, 0, height * 0.95);
-  neck.addColorStop(0, 'rgba(90, 58, 26, 0)');
-  neck.addColorStop(0.5, 'rgba(90, 58, 26, 0.16)');
-  neck.addColorStop(1, 'rgba(90, 58, 26, 0)');
-  ctx.fillStyle = neck;
-  ctx.fillRect(0, height * 0.9, width, height * 0.05);
+
+  // CanvasTexture flips Y: canvas rows run from the tip (top) to the butt
+  // (bottom). The lacquered grip covers the first 8 cm of a 39 cm stick, with a
+  // gold pinstripe at its edge.
+  const grip = Math.round(height * (0.08 / 0.39));
+  const top = height - grip;
+  const lacquer = ctx.createLinearGradient(0, 0, width, 0);
+  lacquer.addColorStop(0, '#3a0f22');
+  lacquer.addColorStop(0.5, '#561433');
+  lacquer.addColorStop(1, '#2e0b1b');
+  ctx.fillStyle = lacquer;
+  ctx.fillRect(0, top, width, grip);
+  ctx.fillStyle = '#d9b45a';
+  ctx.fillRect(0, top + 2, width, 3);
+  ctx.fillStyle = 'rgba(217, 180, 90, 0.55)';
+  ctx.fillRect(0, top - 6, width, 1);
+
+  // the printed name runs along the stick on one side of the grip; drawn
+  // mirrored so that the texture flip puts it the right way round
+  ctx.save();
+  ctx.translate(width * 0.5, top + grip * 0.5);
+  ctx.scale(1, -1);
+  ctx.rotate(Math.PI / 2);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#e8c56b';
+  ctx.font = '600 22px "Segoe UI", "Helvetica Neue", Arial, sans-serif';
+  ctx.fillText('C. LAMBOLEY', 0, -9);
+  ctx.font = '500 13px "Segoe UI", "Helvetica Neue", Arial, sans-serif';
+  ctx.fillStyle = 'rgba(232, 197, 107, 0.8)';
+  ctx.fillText('S I G N A T U R E   7 A', 0, 12);
+  ctx.restore();
+
   const texture = new CanvasTexture(canvas);
   texture.colorSpace = SRGBColorSpace;
   texture.wrapS = RepeatWrapping;
-  texture.anisotropy = 4;
+  texture.anisotropy = 8;
   return texture;
 }
