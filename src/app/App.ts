@@ -60,7 +60,18 @@ function createStats(): HTMLElement {
 const MAX_FRAME_DT = 0.05;
 const CENTER = new Vector2(0, 0);
 /** Events that count as a user activation for audio playback. */
-const GESTURES = ['pointerdown', 'mousedown', 'touchstart', 'keydown', 'click'] as const;
+// browsers only let audio start after a real activation (click, key, tap); the
+// softer events are retried in case the site is already trusted with sound
+const GESTURES = [
+  'pointerdown',
+  'mousedown',
+  'touchstart',
+  'keydown',
+  'click',
+  'pointermove',
+  'wheel',
+  'touchmove',
+] as const;
 
 interface ScheduledHit {
   at: number;
@@ -205,7 +216,9 @@ export class App {
       storeRung(rung);
     }, readStoredRung());
     this.applyLevels(this.governor.levels);
-    this.stats = new URLSearchParams(location.search).has('stats') ? createStats() : null;
+    const wantStats =
+      new URLSearchParams(location.search).has('stats') || location.hash.includes('stats');
+    this.stats = wantStats ? createStats() : null;
 
     this.fsm.subscribe(this.onStateChange);
   }
@@ -244,6 +257,9 @@ export class App {
     window.addEventListener('resize', this.resize);
     for (const type of GESTURES) window.addEventListener(type, this.onFirstGesture);
     window.addEventListener('click', this.onClick);
+    // try right away: a browser that already trusts the site plays from the start,
+    // the others keep the ambience scheduled until the first gesture unlocks it
+    this.onFirstGesture();
     this.frame(performance.now());
   }
 
