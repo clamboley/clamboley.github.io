@@ -60,3 +60,8 @@ export function gazeToward(x: number, y: number, z: number): Gaze {
   const dz = z - EYE.z;
   return { yaw: Math.atan2(-dx, -dz), pitch: Math.atan2(dy, Math.hypot(dx, dz)) };
 }
+
+/** Keeps a gaze inside what the seated drummer can reach. */
+export function clampGaze({ yaw, pitch }: Gaze): Gaze {
+  return { yaw: clamp(yaw, -YAW_RANGE, YAW_RANGE), pitch: clamp(pitch, PITCH_MIN, PITCH_MAX) };
+}

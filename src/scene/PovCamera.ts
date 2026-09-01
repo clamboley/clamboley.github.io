@@ -1,6 +1,6 @@
 import { MathUtils, PerspectiveCamera } from 'three';
 import type { MotionPrefs } from '../util/motion.ts';
-import { BASE_PITCH, EYE, gazeFromPointer } from './gaze.ts';
+import { BASE_PITCH, EYE, clampGaze, gazeFromPointer, gazeToward } from './gaze.ts';
 
 const LOOK_LAMBDA = 7; // how fast the gaze follows the mouse (≈ 140 ms response)
 const SHAKE_LAMBDA = 7.7;
@@ -23,6 +23,13 @@ export class PovCamera {
   /** Pointer position normalised to [-1, 1] (x right, y up). */
   look(nx: number, ny: number): void {
     const gaze = gazeFromPointer(nx, ny);
+    this.targetYaw = gaze.yaw;
+    this.targetPitch = gaze.pitch;
+  }
+
+  /** Turns towards a world point (keyboard focus on an element). */
+  lookAt(x: number, y: number, z: number): void {
+    const gaze = clampGaze(gazeToward(x, y, z));
     this.targetYaw = gaze.yaw;
     this.targetPitch = gaze.pitch;
   }

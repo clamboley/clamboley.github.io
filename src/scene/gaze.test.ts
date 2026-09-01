@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { KIT } from '../kit.config.ts';
-import { PITCH_MAX, PITCH_MIN, gazeFromPointer, gazeToward, pointerFromGaze } from './gaze.ts';
+import {
+  PITCH_MAX,
+  PITCH_MIN,
+  YAW_RANGE,
+  clampGaze,
+  gazeFromPointer,
+  gazeToward,
+  pointerFromGaze,
+} from './gaze.ts';
 
 /** Fraction of the half-screen beyond which aiming gets tiresome. */
 const COMFORT = 0.7;
@@ -42,4 +50,19 @@ describe('gaze', () => {
       expect(Math.abs(ny)).toBeLessThanOrEqual(COMFORT);
     },
   );
+});
+
+describe('clampGaze', () => {
+  it('bounds yaw and pitch to the seated range', () => {
+    const g = clampGaze({ yaw: 9, pitch: -9 });
+    expect(g.yaw).toBe(YAW_RANGE);
+    expect(g.pitch).toBe(PITCH_MIN);
+  });
+
+  it('lets the keyboard focus turn towards every element without clamping', () => {
+    for (const element of KIT) {
+      const gaze = gazeToward(...element.placement.position);
+      expect(clampGaze(gaze)).toEqual(gaze);
+    }
+  });
 });

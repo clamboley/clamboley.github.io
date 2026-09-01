@@ -2,6 +2,7 @@ import { FogExp2, Raycaster, Scene, Timer, Vector2, Vector3, type WebGLRenderer 
 import { assets } from '../assets.config.ts';
 import { AudioEngine } from '../audio/AudioEngine.ts';
 import { fillDuration } from '../audio/fills.ts';
+import { KeyboardInput } from '../input/KeyboardInput.ts';
 import { LookInput } from '../input/LookInput.ts';
 import { KIT, KIT_BY_KEY } from '../kit.config.ts';
 import { site } from '../site.config.ts';
@@ -60,6 +61,9 @@ export class App {
   private readonly post: PostProcessing;
   private readonly audio = new AudioEngine();
   private readonly look: LookInput;
+  private readonly keyboard: KeyboardInput;
+  /** Element aimed through the keyboard focus, overriding the crosshair. */
+  private keyboardAim: KitKey | null = null;
   private readonly raycaster = new Raycaster();
   private readonly timer = new Timer();
   private readonly hud: Hud;
@@ -108,6 +112,7 @@ export class App {
 
     this.look = new LookInput(
       (nx, ny) => {
+        this.keyboard.release();
         this.pov.look(nx, ny);
       },
       () => {
@@ -115,6 +120,30 @@ export class App {
           this.hud.hideHint();
         }, 2500);
       },
+    );
+
+    const pointerCta = coarsePointer ? 'touche pour jouer un fill' : 'clique pour jouer un fill';
+    this.keyboard = new KeyboardInput(document, {
+      onFocus: (key) => {
+        this.keyboardAim = key;
+        this.hud.setCta('Entrée pour jouer un fill');
+        const [x, y, z] = KIT_BY_KEY[key].placement.position;
+        this.pov.lookAt(x, y, z);
+      },
+      onBlur: () => {
+        this.keyboardAim = null;
+        this.hud.setCta(pointerCta);
+      },
+      onActivate: (key) => {
+        this.keyboardAim = key;
+        this.fsm.aim(key); // the click that follows plays it
+      },
+    });
+    hud.setCta(pointerCta);
+    hud.setHint(
+      coarsePointer
+        ? 'Glisse le doigt pour regarder autour de toi, touche pour jouer'
+        : 'Déplace la souris pour regarder autour de toi · Tab parcourt les fûts, Entrée joue',
     );
 
     this.fsm.subscribe(this.onStateChange);
@@ -154,6 +183,7 @@ export class App {
     for (const type of GESTURES) window.removeEventListener(type, this.onFirstGesture);
     window.removeEventListener('click', this.onClick);
     this.look.dispose();
+    this.keyboard.dispose();
     this.renderer.dispose();
   }
 
@@ -340,6 +370,7 @@ export class App {
 
   /** Raycast from the centre of the screen, not from the cursor. */
   private aimedKey(): KitKey | null {
+    if (this.keyboardAim !== null) return this.keyboardAim;
     this.raycaster.setFromCamera(CENTER, this.pov.camera);
     const hit = this.raycaster.intersectObjects(this.kit.proxies, false)[0];
     return hit ? this.kit.keyOf(hit.object) : null;

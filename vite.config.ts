@@ -23,8 +23,8 @@ function escapeHtml(value: string): string {
  */
 function siteHtml(): Plugin {
   const navItems = KIT.map(
-    ({ destination }) =>
-      `<li><a href="${escapeHtml(destination.url)}">${escapeHtml(destination.label)}</a></li>`,
+    ({ key, destination }) =>
+      `<li><a href="${escapeHtml(destination.url)}" data-key="${key}">${escapeHtml(destination.label)}</a></li>`,
   ).join('\n        ');
   const tokens: Record<string, string> = {
     'site.lang': site.lang,
