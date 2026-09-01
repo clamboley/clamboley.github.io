@@ -25,8 +25,8 @@ jobs:
       - run: npm ci
       - run: npm run check
         env:
-          # served from https://clamboley.github.io/vitrine/
-          BASE_PATH: /vitrine/
+          # user site: served from the root of https://clamboley.github.io/
+          BASE_PATH: /
       - uses: actions/upload-pages-artifact@v3
         if: github.ref == 'refs/heads/main'
         with:

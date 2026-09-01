@@ -19,7 +19,7 @@ Vite · TypeScript · Three.js · Web Audio API · site 100 % statique.
 npm install
 npm run dev        # http://127.0.0.1:5173 (en dev, la redirection propose un retour sur scène)
 npm run check      # lint + format + typecheck + tests + build, ce que la CI exécute
-npm run build      # → dist/   (BASE_PATH=/vitrine/ pour un déploiement en sous-chemin)
+npm run build      # → dist/   (BASE_PATH=/sous-chemin/ pour un déploiement hors racine)
 npm run preview    # sert dist/ ; ajouter ?stay à l'URL pour ne pas quitter la page au clic
 ```
 
@@ -59,5 +59,5 @@ Les kits Sketchfab CC-BY repérés pour remplacer le kit procédural (téléchar
 
 ## Déploiement
 
-GitHub Pages via `.github/workflows/ci.yml` (push sur `main` → build avec `BASE_PATH=/vitrine/` → déploiement).
+GitHub Pages via `.github/workflows/ci.yml` (push sur `main` → build → déploiement). Le repo GitHub s'appelle `clamboley.github.io` pour que le site soit servi à la racine ; `/deep-notes/` reste un site de projet à côté.
 Le dépôt GitLab garde la même vérification dans `.gitlab-ci.yml`.
