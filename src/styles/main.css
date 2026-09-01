@@ -254,14 +254,14 @@ body.is-fallback .site-nav {
 .fallback-3d {
   margin-top: 36px;
 }
-.fallback-3d a {
+.site-nav .fallback-3d a {
   font-size: 13px;
   color: var(--ink-soft);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-.fallback-3d a:hover,
-.fallback-3d a:focus-visible {
+.site-nav .fallback-3d a:hover,
+.site-nav .fallback-3d a:focus-visible {
   color: #fff;
 }
 .site-nav h1 {
