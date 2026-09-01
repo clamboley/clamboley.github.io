@@ -13,7 +13,6 @@ import {
 import { seededRandom } from '../util/random.ts';
 
 const DOME_RADIUS = 300;
-const STAR_COUNT = 7000;
 
 const noiseGlsl = /* glsl */ `
   float hash(vec3 p) {
@@ -80,11 +79,12 @@ const starsVertex = /* glsl */ `
   attribute vec3 tint;
   uniform float time;
   uniform float pixelRatio;
+  uniform float twinkleAmp;
   varying float vAlpha;
   varying vec3 vTint;
   void main() {
     vTint = tint;
-    float twinkle = 0.72 + 0.28 * sin(time * (1.2 + phase) + phase * 6.2831);
+    float twinkle = (1.0 - twinkleAmp) + twinkleAmp * sin(time * (1.2 + phase) + phase * 6.2831);
     vAlpha = twinkle;
     vec4 mv = modelViewMatrix * vec4(position, 1.0);
     gl_PointSize = size * pixelRatio * twinkle;
@@ -110,7 +110,8 @@ export class Sky {
   readonly root = new Group();
   private readonly stars: ShaderMaterial;
 
-  constructor(pixelRatio: number) {
+  /** `twinkleAmp` is the star flicker depth (0 = still), scaled down under reduced motion. */
+  constructor(pixelRatio: number, starCount: number, twinkleAmp: number) {
     const dome = new Mesh(
       new SphereGeometry(DOME_RADIUS, 48, 24),
       new ShaderMaterial({
@@ -131,13 +132,13 @@ export class Sky {
     this.root.add(dome);
 
     const random = seededRandom(1024);
-    const positions = new Float32Array(STAR_COUNT * 3);
-    const sizes = new Float32Array(STAR_COUNT);
-    const phases = new Float32Array(STAR_COUNT);
-    const tints = new Float32Array(STAR_COUNT * 3);
+    const positions = new Float32Array(starCount * 3);
+    const sizes = new Float32Array(starCount);
+    const phases = new Float32Array(starCount);
+    const tints = new Float32Array(starCount * 3);
     const [bx, by, bz] = [0.42, 0.55, 0.72];
     let n = 0;
-    while (n < STAR_COUNT) {
+    while (n < starCount) {
       // uniform on the sphere, keep the upper hemisphere, favour the milky band
       const u = random() * 2 - 1;
       const a = random() * Math.PI * 2;
@@ -168,7 +169,11 @@ export class Sky {
     this.stars = new ShaderMaterial({
       vertexShader: starsVertex,
       fragmentShader: starsFragment,
-      uniforms: { time: { value: 0 }, pixelRatio: { value: pixelRatio } },
+      uniforms: {
+        time: { value: 0 },
+        pixelRatio: { value: pixelRatio },
+        twinkleAmp: { value: twinkleAmp },
+      },
       transparent: true,
       depthWrite: false,
       blending: AdditiveBlending,

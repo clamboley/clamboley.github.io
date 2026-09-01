@@ -1,11 +1,9 @@
 import { NoToneMapping, PCFShadowMap, WebGLRenderer } from 'three';
 
-const MAX_PIXEL_RATIO = 1.75;
-
 /** Tone mapping is left to the post-processing chain (HDR frame buffers). */
-export function createRenderer(): WebGLRenderer {
+export function createRenderer(pixelRatioMax: number): WebGLRenderer {
   const renderer = new WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, MAX_PIXEL_RATIO));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, pixelRatioMax));
   renderer.toneMapping = NoToneMapping;
   renderer.toneMappingExposure = 1;
   renderer.shadowMap.enabled = true;

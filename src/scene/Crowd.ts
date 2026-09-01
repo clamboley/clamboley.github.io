@@ -24,8 +24,6 @@ const BASE_ENERGY = 0.45;
 const ENERGY_LAMBDA = 0.6; // return to base energy
 const PIT_FLOOR = -0.8; // the audience stands below the stage
 const PIT_FRONT = -4; // z of the first row
-const PIT_DEPTH = 46; // how far the blocks of people go
-const PIT_LIGHTS = 9000; // phones held up across the field
 const BLOCK_DETAIL_DEPTH = 14; // blocks nearer than this use the detailed model
 const BLOCK_HEIGHT = 2.3; // metres, a block of thirty people with their arms up
 const BLOCK_WIDTH = 4.2; // metres, six people shoulder to shoulder
@@ -94,13 +92,19 @@ export class Crowd {
   private readonly individualDepth: number;
   private readonly blocks = new Group();
 
+  /** How far the blocks of people go, metres. */
+  private readonly pitDepth: number;
+
   constructor(
     count: number,
     individualDepth: number,
     private readonly motion: MotionPrefs,
+    field: { pitLights: number; pitDepth: number },
   ) {
     const random = seededRandom(1979);
     this.individualDepth = individualDepth;
+    this.pitDepth = field.pitDepth;
+    const pitLights = field.pitLights;
     for (let i = 0; i < count; i++) {
       const z = PIT_FRONT - random() * individualDepth;
       this.people.push({
@@ -126,7 +130,7 @@ export class Crowd {
     this.arms.userData.people = armsPeople;
 
     const near = Math.floor(count * 0.28);
-    const positions = new Float32Array((near + PIT_LIGHTS) * 3);
+    const positions = new Float32Array((near + pitLights) * 3);
     for (let i = 0; i < near; i++) {
       const person = this.people[Math.floor(random() * this.people.length)];
       if (!person) continue;
@@ -134,8 +138,8 @@ export class Crowd {
       positions[i * 3 + 1] = person.y + person.height * (0.92 + random() * 0.2);
       positions[i * 3 + 2] = person.z + 0.2;
     }
-    for (let i = near; i < near + PIT_LIGHTS; i++) {
-      const depth = Math.pow(random(), 0.8) * (PIT_DEPTH + 30); // thinning with distance
+    for (let i = near; i < near + pitLights; i++) {
+      const depth = Math.pow(random(), 0.8) * (this.pitDepth + 30); // thinning with distance
       const z = PIT_FRONT - 1 - depth;
       const halfWidth = 13 + depth * 0.55; // the field widens
       positions[i * 3] = (random() - 0.5) * 2 * halfWidth;
@@ -171,7 +175,7 @@ export class Crowd {
     const random = seededRandom(7);
     const slots: { x: number; z: number }[] = [];
     const rowStep = BLOCK_DEPTH * 0.85;
-    for (let z = PIT_FRONT - 1.2; z > PIT_FRONT - PIT_DEPTH + 0.5; z -= rowStep) {
+    for (let z = PIT_FRONT - 1.2; z > PIT_FRONT - this.pitDepth + 0.5; z -= rowStep) {
       const halfWidth = 13.5 + (-z - PIT_FRONT) * 0.55;
       const offset = (slots.length % 2) * BLOCK_WIDTH * 0.5;
       for (let x = -halfWidth + offset; x <= halfWidth; x += BLOCK_WIDTH * 0.92) {

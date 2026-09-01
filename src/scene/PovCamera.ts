@@ -40,6 +40,8 @@ export class PovCamera {
 
   resize(aspect: number): void {
     this.camera.aspect = aspect;
+    // a phone held upright would otherwise see a narrow slice of the kit
+    this.camera.fov = aspect < 1 ? 78 : 66;
     this.camera.updateProjectionMatrix();
   }
 

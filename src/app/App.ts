@@ -23,6 +23,7 @@ import { withBase } from '../util/base.ts';
 import type { Hud } from '../ui/Hud.ts';
 import type { RedirectOverlay } from '../ui/RedirectOverlay.ts';
 import { readMotionPrefs } from '../util/motion.ts';
+import type { QualityProfile } from '../util/quality.ts';
 import { StateMachine, type State } from './StateMachine.ts';
 
 const BACKGROUND = 0x05040a;
@@ -43,6 +44,7 @@ export interface AppOptions {
   overlay: RedirectOverlay;
   /** Show a way back instead of navigating (development, `?stay`). */
   stayOnRedirect: boolean;
+  quality: QualityProfile;
 }
 
 /** Wires scene, input, audio and HUD around the state machine and runs the loop. */
@@ -69,6 +71,7 @@ export class App {
   private readonly hud: Hud;
   private readonly overlay: RedirectOverlay;
   private readonly stayOnRedirect: boolean;
+  readonly quality: QualityProfile;
 
   private pendingHits: ScheduledHit[] = [];
   private fillEndsAt = 0;
@@ -77,15 +80,16 @@ export class App {
   private fillSamplesRequested = false;
   private frameHandle = 0;
 
-  constructor({ container, hud, overlay, stayOnRedirect }: AppOptions) {
+  constructor({ container, hud, overlay, stayOnRedirect, quality }: AppOptions) {
     this.hud = hud;
+    this.quality = quality;
     this.overlay = overlay;
     this.stayOnRedirect = stayOnRedirect;
 
     const motion = readMotionPrefs();
     const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
 
-    this.renderer = createRenderer();
+    this.renderer = createRenderer(quality.pixelRatioMax);
     container.appendChild(this.renderer.domElement);
 
     this.scene.fog = new FogExp2(0x070812, 0.014);
@@ -93,9 +97,12 @@ export class App {
     this.scene.environmentIntensity = 0.45;
     this.pov = new PovCamera(motion);
     this.kit = new DrumKit(KIT);
-    this.crowd = new Crowd(coarsePointer ? 90 : 170, assets.crowdIndividualDepth, motion);
-    this.lights = new StageLights(motion, this.rig.rig);
-    this.sky = new Sky(this.renderer.getPixelRatio());
+    this.crowd = new Crowd(quality.people, assets.crowdIndividualDepth, motion, {
+      pitLights: quality.pitLights,
+      pitDepth: quality.pitDepth,
+    });
+    this.lights = new StageLights(motion, this.rig.rig, quality.shadowMapSize);
+    this.sky = new Sky(this.renderer.getPixelRatio(), quality.stars, 0.28 * motion.scale);
     this.scene.add(
       createStage(),
       this.kit.root,
@@ -108,7 +115,9 @@ export class App {
     );
     this.loadGeneratedAssets();
     this.renderer.setClearColor(BACKGROUND, 1);
-    this.post = createPostProcessing(this.renderer, this.scene, this.pov.camera);
+    this.post = createPostProcessing(this.renderer, this.scene, this.pov.camera, {
+      antialias: quality.antialias,
+    });
 
     this.look = new LookInput(
       (nx, ny) => {

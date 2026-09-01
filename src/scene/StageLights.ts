@@ -37,6 +37,7 @@ export class StageLights {
   constructor(
     private readonly motion: MotionPrefs,
     rig: Rig,
+    shadowMapSize = 1024,
   ) {
     this.root.add(new HemisphereLight(0x2a2440, 0x05050a, 0.18));
 
@@ -44,7 +45,7 @@ export class StageLights {
     key.position.set(0.7, 3.3, 1.1);
     key.target.position.copy(KIT_CENTRE);
     key.castShadow = true;
-    key.shadow.mapSize.set(1024, 1024);
+    key.shadow.mapSize.set(shadowMapSize, shadowMapSize);
     key.shadow.bias = -0.0005;
     key.shadow.normalBias = 0.01;
     key.shadow.camera.near = 0.5;

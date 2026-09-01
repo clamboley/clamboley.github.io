@@ -24,6 +24,7 @@ export function createPostProcessing(
   renderer: WebGLRenderer,
   scene: Scene,
   camera: Camera,
+  options: { antialias: boolean } = { antialias: true },
 ): PostProcessing {
   const composer = new EffectComposer(renderer, { frameBufferType: HalfFloatType });
   composer.addPass(new RenderPass(scene, camera));
@@ -37,7 +38,9 @@ export function createPostProcessing(
   });
   const toneMapping = new ToneMappingEffect({ mode: ToneMappingMode.AGX });
   composer.addPass(new EffectPass(camera, bloom, toneMapping));
-  composer.addPass(new EffectPass(camera, new SMAAEffect({ preset: SMAAPreset.MEDIUM })));
+  if (options.antialias) {
+    composer.addPass(new EffectPass(camera, new SMAAEffect({ preset: SMAAPreset.MEDIUM })));
+  }
 
   const grain = new NoiseEffect({ premultiply: true });
   grain.blendMode.opacity.value = 0.25;
