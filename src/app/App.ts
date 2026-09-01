@@ -124,6 +124,8 @@ export class App {
 
     this.look = new LookInput(
       (nx, ny) => {
+        // the camera holds still under the list, during a fill and on the redirect card
+        if (this.menu.isOpen || !this.fsm.acceptsInput) return;
         this.keyboard.release();
         this.pov.look(nx, ny);
       },
