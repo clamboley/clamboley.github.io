@@ -9,7 +9,7 @@ export const KIT: readonly KitElement[] = [
   {
     key: 'kick',
     kind: 'kick',
-    destination: { label: 'À propos', url: '/a-propos' },
+    destination: { label: 'À propos', url: '/a-propos', pending: true },
     logo: { glyph: 'moi', color: '#8a63d2' },
     placement: { position: [0.02, 0.36, -1.06], radius: 0.3, depth: 0.42 },
     voice: { type: 'kick' },
@@ -19,7 +19,7 @@ export const KIT: readonly KitElement[] = [
   {
     key: 'snare',
     kind: 'drum',
-    destination: { label: 'Mes apps', url: '/apps' },
+    destination: { label: 'Mes apps', url: '/apps', pending: true },
     logo: { glyph: '{ }', color: '#e0563a' },
     placement: { position: [-0.28, 0.82, -0.52], radius: 0.19, depth: 0.15, tilt: 0.1 },
     voice: { type: 'snare' },
@@ -49,7 +49,7 @@ export const KIT: readonly KitElement[] = [
   {
     key: 'floor',
     kind: 'drum',
-    destination: { label: 'Blog', url: '/blog' },
+    destination: { label: 'Blog', url: '/blog', pending: true },
     logo: { glyph: 'B', color: '#3aa06a' },
     placement: { position: [0.57, 0.78, -0.46], radius: 0.21, depth: 0.34, tilt: 0.04 },
     voice: { type: 'tom', pitch: 112 },
@@ -59,7 +59,7 @@ export const KIT: readonly KitElement[] = [
   {
     key: 'hihat',
     kind: 'hihat',
-    destination: { label: 'CV', url: '/cv.pdf' },
+    destination: { label: 'CV', url: '/cv.pdf', pending: true },
     logo: { glyph: 'CV', color: '#c2a23a' },
     placement: { position: [-0.67, 1.03, -0.4], radius: 0.16 },
     voice: { type: 'hat' },
@@ -69,7 +69,7 @@ export const KIT: readonly KitElement[] = [
   {
     key: 'crash',
     kind: 'cymbal',
-    destination: { label: 'Contact', url: 'mailto:contact@example.com' },
+    destination: { label: 'Contact', url: 'mailto:contact@example.com', pending: true },
     logo: { glyph: '@', color: '#c2603a' },
     placement: { position: [-0.6, 1.52, -0.86], radius: 0.26, tilt: 0.55 },
     voice: { type: 'crash' },
@@ -79,7 +79,7 @@ export const KIT: readonly KitElement[] = [
   {
     key: 'ride',
     kind: 'cymbal',
-    destination: { label: 'Musique', url: '/musique' },
+    destination: { label: 'Musique', url: '/musique', pending: true },
     logo: { glyph: '♪', color: '#b03a8c' },
     placement: { position: [0.64, 1.44, -0.92], radius: 0.3, tilt: 0.48 },
     voice: { type: 'ride' },

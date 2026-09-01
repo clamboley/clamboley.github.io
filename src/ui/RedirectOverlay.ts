@@ -38,10 +38,20 @@ export class RedirectOverlay {
     this.badge.textContent = logo.glyph;
     this.badge.style.background = logo.color;
     this.destination.textContent = destination.label;
-    this.url.textContent = destination.url.replace(/^mailto:/, '');
-    this.go.href = destination.url;
+    const pending = destination.pending === true;
+    this.go.classList.toggle('is-pending', pending);
+    if (pending) {
+      // nothing to open yet: the link is greyed out, the way back takes the focus
+      this.url.textContent = 'bientôt';
+      this.go.removeAttribute('href');
+      this.go.setAttribute('aria-disabled', 'true');
+    } else {
+      this.url.textContent = destination.url.replace(/^mailto:/, '');
+      this.go.href = destination.url;
+      this.go.removeAttribute('aria-disabled');
+    }
     this.root.classList.add('is-on');
-    this.go.focus();
+    (pending ? this.back : this.go).focus();
   }
 
   hide(): void {

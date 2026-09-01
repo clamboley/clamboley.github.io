@@ -85,8 +85,18 @@ export class KeyboardInput {
       this.handlers.onEscape();
       return;
     }
-    if (event.key !== 'Tab' || this.menuOpen) return;
+    if (this.menuOpen) return;
     const active = document.activeElement;
+    if (event.key === 'Enter') {
+      // a pending destination has no href, so the browser would not click it:
+      // click on our own for every element (default prevented, no double fire)
+      if (active instanceof HTMLAnchorElement && isKitKey(active.dataset.key)) {
+        event.preventDefault();
+        active.click();
+      }
+      return;
+    }
+    if (event.key !== 'Tab') return;
     const index = active instanceof HTMLAnchorElement ? this.links.indexOf(active) : -1;
     // the kit is a loop: Tab past the last element lands on the first, and back
     if (index === -1) {

@@ -229,6 +229,12 @@ body.is-aiming #stage canvas {
   color: #fff;
   outline: none;
 }
+.redirect-go.is-pending {
+  background: rgba(185, 176, 214, 0.14);
+  color: #6f678f;
+  pointer-events: none;
+  cursor: default;
+}
 .redirect-back {
   border: 1px solid rgba(185, 176, 214, 0.45);
   background: none;
@@ -345,6 +351,16 @@ body.is-menu .identity {
 .site-nav a:hover,
 .site-nav a:focus-visible {
   color: var(--accent);
+}
+.site-nav a[data-pending] {
+  color: #6f678f;
+  cursor: default;
+}
+.site-nav a[data-pending]::after {
+  content: ' · bientôt';
+  font-size: 0.55em;
+  font-weight: 400;
+  letter-spacing: 0.02em;
 }
 
 /* --- ?stats: adaptive budget read-out --- */

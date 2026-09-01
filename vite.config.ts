@@ -22,9 +22,11 @@ function escapeHtml(value: string): string {
  * single source of truth used by the scene.
  */
 function siteHtml(): Plugin {
-  const navItems = KIT.map(
-    ({ key, destination }) =>
-      `<li><a href="${escapeHtml(destination.url)}" data-key="${key}">${escapeHtml(destination.label)}</a></li>`,
+  // a pending destination stays focusable for the keyboard path but is no link
+  const navItems = KIT.map(({ key, destination }) =>
+    destination.pending === true
+      ? `<li><a data-key="${key}" data-pending="true" tabindex="0" aria-disabled="true">${escapeHtml(destination.label)}</a></li>`
+      : `<li><a href="${escapeHtml(destination.url)}" data-key="${key}">${escapeHtml(destination.label)}</a></li>`,
   ).join('\n        ');
   const sameAs = KIT.map(({ destination }) => destination.url).filter((url) =>
     url.startsWith('https://'),

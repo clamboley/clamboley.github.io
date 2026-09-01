@@ -32,4 +32,11 @@ describe('kit config', () => {
       expect(destination.url).toMatch(/^(https?:\/\/|mailto:|\/)/);
     }
   });
+
+  it('keeps a URL on pending destinations, for the day they exist', () => {
+    for (const { destination } of KIT) {
+      if (destination.pending === true) expect(destination.url.length).toBeGreaterThan(1);
+    }
+    expect(KIT.filter((e) => e.destination.pending !== true).length).toBeGreaterThanOrEqual(2);
+  });
 });

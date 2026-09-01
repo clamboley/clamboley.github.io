@@ -38,6 +38,8 @@ export interface Fill {
 export interface Destination {
   label: string;
   url: string;
+  /** Not built yet: shown greyed out, nothing to open. */
+  pending?: boolean;
 }
 
 /** Placeholder logo: a glyph on a coloured disc (real logos later). */
