@@ -156,8 +156,9 @@ export class App {
 
     this.look = new LookInput(
       (nx, ny) => {
-        // the camera holds still under the list, during a fill and on the redirect card
-        if (this.menu.isOpen || !this.fsm.acceptsInput) return;
+        // the camera holds still under the list and on the redirect card; it may
+        // still look around while a fill plays
+        if (this.menu.isOpen || this.fsm.state.name === 'redirect') return;
         this.keyboard.release();
         this.pov.look(nx, ny);
       },
