@@ -75,6 +75,11 @@ export class AudioEngine {
   }
 
   /** Fetches and decodes a sample so it is ready when a fill needs it. */
+  /** Whether a recording is fetched, decoded and ready to play. */
+  hasSample(url: string): boolean {
+    return this.samples.has(url);
+  }
+
   async preload(url: string): Promise<void> {
     if (this.samples.has(url)) return;
     const graph = this.requireGraph();

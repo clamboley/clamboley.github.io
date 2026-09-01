@@ -8,7 +8,7 @@ import { COMPACT_KIT } from '../kit.compact.ts';
 import { FULL_KIT, KIT, KIT_BY_KEY } from '../kit.config.ts';
 import { COMPACT_RANGES, FULL_RANGES } from '../scene/gaze.ts';
 import { site } from '../site.config.ts';
-import type { KitKey } from '../kit.types.ts';
+import type { Fill, KitKey } from '../kit.types.ts';
 import { createRenderer } from '../scene/createRenderer.ts';
 import { Crowd } from '../scene/Crowd.ts';
 import { DrumKit } from '../scene/DrumKit.ts';
@@ -129,6 +129,7 @@ export class App {
   readonly quality: QualityProfile;
 
   private pendingHits: ScheduledHit[] = [];
+  private fillAfterCount: { fill: Fill; at: number } | null = null;
   private fillEndsAt = 0;
   /** Audio time when the current count-in (sticks clicked in the air) ends. */
   private countEndsAt = 0;
@@ -340,6 +341,8 @@ export class App {
 
   /** Browsers only let audio start from a gesture: the first one wakes the crowd. */
   private readonly onFirstGesture = (): void => {
+    this.preloadFillSamples();
+    void this.audio.preload(withBase(site.countIn.sample)).catch(() => undefined);
     this.audio.unlock();
     void this.audio
       .startAmbience(withBase(site.ambience.file), site.ambience.level)
@@ -387,6 +390,24 @@ export class App {
 
     void this.audio.whenRunning().then(() => {
       if (this.fsm.state.name !== 'fill') return;
+      if (fill.sample !== null && !this.audio.hasSample(fill.sample)) {
+        // the recording is still decoding (first click): count the fill in
+        // with the sticks, and hand over on the beat that follows
+        const start = this.audio.currentTime + 0.12;
+        const beat = 60 / 130;
+        const times = [0, 1, 2, 3].map((i) => start + i * beat);
+        this.audio.countIn(times, withBase(site.countIn.sample));
+        this.sticks.countIn(times, this.countFrame());
+        this.fillAfterCount = { fill, at: start + 4 * beat };
+        return;
+      }
+      this.startFill(fill);
+    });
+  };
+
+  /** Schedules a fill's audio, hits, kicks and stick strokes right now. */
+  private startFill(fill: Fill): void {
+    {
       const start = this.audio.playFill(fill, (key) => KIT_BY_KEY[key].voice);
       this.pendingHits = fill.hits
         .map((hit) => ({ at: start + hit.t, key: hit.key, velocity: hit.velocity }))
@@ -411,8 +432,8 @@ export class App {
           });
       }
       this.sticks.play(strikes);
-    });
-  };
+    }
+  }
 
   /** Click on no target: four stick clicks, like counting a song in. */
   /** Fetch and decode the fills' recordings once, on the first gesture. */
@@ -496,6 +517,11 @@ export class App {
     const elapsed = this.timer.getElapsed();
 
     this.applyDueHits();
+    const after = this.fillAfterCount;
+    if (after !== null && this.audio.currentTime >= after.at - 0.1) {
+      this.fillAfterCount = null;
+      if (this.fsm.state.name === 'fill') this.startFill(after.fill);
+    }
     if (this.fsm.state.name === 'fill' && this.audio.currentTime >= this.fillEndsAt) {
       this.fsm.fillDone();
     }
