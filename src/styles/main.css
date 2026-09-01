@@ -240,7 +240,8 @@ body.is-fallback #stage,
 body.is-fallback .identity {
   display: none;
 }
-body.is-fallback .site-nav {
+body.is-fallback .site-nav,
+body.is-menu .site-nav {
   position: static;
   width: auto;
   height: auto;
@@ -250,6 +251,42 @@ body.is-fallback .site-nav {
   max-width: 32rem;
   margin: 0 auto;
   padding: 16vh 24px 12vh;
+}
+.menu-hint {
+  display: none;
+}
+
+/* --- Escape: the same list, over the live scene --- */
+body.is-menu .site-nav {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  background: linear-gradient(180deg, rgba(5, 4, 10, 0.72) 0%, rgba(5, 4, 10, 0.9) 100%);
+  cursor: default;
+}
+body.is-menu .site-nav > * {
+  max-width: 32rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 24px;
+  padding-right: 24px;
+}
+body.is-menu .site-nav > h1 {
+  padding-top: 14vh;
+}
+body.is-menu .site-nav .menu-hint {
+  display: block;
+  margin-top: 36px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+body.is-menu #hud,
+body.is-menu .identity {
+  display: none;
 }
 .fallback-3d {
   margin-top: 36px;

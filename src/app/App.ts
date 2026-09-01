@@ -20,7 +20,9 @@ import { type CountFrame, Sticks, type Strike } from '../scene/Sticks.ts';
 import { LightRig } from '../scene/Rig.ts';
 import { Sky } from '../scene/Sky.ts';
 import { withBase } from '../util/base.ts';
+import { mustQuery } from '../util/dom.ts';
 import type { Hud } from '../ui/Hud.ts';
+import { Menu } from '../ui/Menu.ts';
 import type { RedirectOverlay } from '../ui/RedirectOverlay.ts';
 import { readMotionPrefs } from '../util/motion.ts';
 import type { QualityProfile } from '../util/quality.ts';
@@ -64,6 +66,7 @@ export class App {
   private readonly audio = new AudioEngine();
   private readonly look: LookInput;
   private readonly keyboard: KeyboardInput;
+  private readonly menu: Menu;
   /** Element aimed through the keyboard focus, overriding the crosshair. */
   private keyboardAim: KitKey | null = null;
   private readonly raycaster = new Raycaster();
@@ -147,12 +150,18 @@ export class App {
         this.keyboardAim = key;
         this.fsm.aim(key); // the click that follows plays it
       },
+      onEscape: () => {
+        this.toggleMenu();
+      },
+    });
+    this.menu = new Menu(mustQuery(document.body, '.site-nav'), () => {
+      this.toggleMenu();
     });
     hud.setCta(pointerCta);
     hud.setHint(
       coarsePointer
         ? 'Glisse le doigt pour regarder autour de toi, touche pour jouer'
-        : 'Déplace la souris pour regarder autour de toi · Tab parcourt les fûts, Entrée joue',
+        : 'Déplace la souris pour regarder autour de toi · Tab parcourt les fûts, Entrée joue, Échap liste les liens',
     );
 
     this.fsm.subscribe(this.onStateChange);
@@ -193,6 +202,7 @@ export class App {
     window.removeEventListener('click', this.onClick);
     this.look.dispose();
     this.keyboard.dispose();
+    this.menu.dispose();
     this.renderer.dispose();
   }
 
@@ -217,6 +227,23 @@ export class App {
     }
   };
 
+  /** Escape: the plain list of destinations over the scene, and back. */
+  private toggleMenu(): void {
+    if (this.menu.isOpen) {
+      this.menu.hide();
+      this.keyboard.setMenu(false);
+      this.keyboard.release();
+      return;
+    }
+    if (!this.fsm.acceptsInput) return;
+    this.keyboard.release();
+    this.keyboardAim = null;
+    this.fsm.aim(null); // nothing is aimed while the list is up
+    this.keyboard.setMenu(true);
+    this.menu.show();
+    this.keyboard.focusFirst();
+  }
+
   /** Back on stage after a redirect that did not leave the page. */
   returnToStage(): void {
     this.fsm.reset();
@@ -233,6 +260,7 @@ export class App {
   };
 
   private readonly onClick = (): void => {
+    if (this.menu.isOpen) return;
     const { state } = this.fsm;
     if (state.name === 'idle') {
       this.countIn();
@@ -352,7 +380,7 @@ export class App {
     }
 
     this.pov.update(dt, elapsed);
-    if (this.fsm.acceptsInput) this.fsm.aim(this.aimedKey());
+    if (this.fsm.acceptsInput && !this.menu.isOpen) this.fsm.aim(this.aimedKey());
 
     const hovered = this.fsm.state.name === 'hover' ? this.fsm.state.target : null;
     this.kit.update(dt, elapsed, hovered);

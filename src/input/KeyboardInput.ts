@@ -7,6 +7,8 @@ export interface KeyboardHandlers {
   onBlur(): void;
   /** Enter (or a click) on the focused link: play it instead of navigating. */
   onActivate(key: KitKey): void;
+  /** Escape: open or close the plain list of destinations. */
+  onEscape(): void;
 }
 
 function isKitKey(value: string | undefined): value is KitKey {
@@ -14,24 +16,33 @@ function isKitKey(value: string | undefined): value is KitKey {
 }
 
 /**
- * The visually hidden navigation doubles as the keyboard path: Tab moves the
- * focus (and the gaze) from element to element, Enter plays the fill, Escape
- * lets go. The pointer taking over releases the focus.
+ * The visually hidden navigation doubles as the keyboard path: Tab cycles
+ * the focus (and the gaze) through the elements of the kit, wrapping around
+ * at both ends, Enter plays the fill, Escape brings up the plain list. The
+ * pointer taking over releases the focus. While the list is open, the links
+ * behave as ordinary links.
  */
 export class KeyboardInput {
+  private readonly links: HTMLAnchorElement[] = [];
   private readonly unbind: (() => void)[] = [];
+  private menuOpen = false;
 
-  constructor(root: ParentNode, handlers: KeyboardHandlers) {
+  constructor(
+    root: ParentNode,
+    private readonly handlers: KeyboardHandlers,
+  ) {
     for (const link of root.querySelectorAll<HTMLAnchorElement>('a[data-key]')) {
       const key = link.dataset.key;
       if (!isKitKey(key)) continue;
+      this.links.push(link);
       const onFocus = (): void => {
-        handlers.onFocus(key);
+        if (!this.menuOpen) handlers.onFocus(key);
       };
       const onBlur = (): void => {
-        handlers.onBlur();
+        if (!this.menuOpen) handlers.onBlur();
       };
       const onClick = (event: MouseEvent): void => {
+        if (this.menuOpen) return; // a plain link while the list is open
         event.preventDefault();
         handlers.onActivate(key);
       };
@@ -47,10 +58,20 @@ export class KeyboardInput {
     window.addEventListener('keydown', this.onKeyDown);
   }
 
+  /** While the list of destinations is open, focus and Enter mean the usual thing. */
+  setMenu(open: boolean): void {
+    this.menuOpen = open;
+  }
+
   /** Drops the focus from a destination link (the pointer took over). */
   release(): void {
     const active = document.activeElement;
     if (active instanceof HTMLAnchorElement && isKitKey(active.dataset.key)) active.blur();
+  }
+
+  /** Puts the focus on the first element of the kit. */
+  focusFirst(): void {
+    this.links[0]?.focus();
   }
 
   dispose(): void {
@@ -59,6 +80,23 @@ export class KeyboardInput {
   }
 
   private readonly onKeyDown = (event: KeyboardEvent): void => {
-    if (event.key === 'Escape') this.release();
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      this.handlers.onEscape();
+      return;
+    }
+    if (event.key !== 'Tab' || this.menuOpen) return;
+    const active = document.activeElement;
+    const index = active instanceof HTMLAnchorElement ? this.links.indexOf(active) : -1;
+    // the kit is a loop: Tab past the last element lands on the first, and back
+    if (index === -1) {
+      if (this.links.length === 0) return;
+      event.preventDefault();
+      this.links[event.shiftKey ? this.links.length - 1 : 0]?.focus();
+      return;
+    }
+    event.preventDefault();
+    const next = (index + (event.shiftKey ? -1 : 1) + this.links.length) % this.links.length;
+    this.links[next]?.focus();
   };
 }
