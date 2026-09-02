@@ -57,9 +57,12 @@ export function headMaterial(map: Texture, emissive: string): MeshStandardMateri
   });
 }
 
-export function cymbalMaterial(logo: Logo, label: string, emissive: string): MeshPhysicalMaterial {
+export function cymbalMaterial(
+  print: { logo: Logo; label: string } | null,
+  emissive: string,
+): MeshPhysicalMaterial {
   return new MeshPhysicalMaterial({
-    map: cymbalTexture(logo, label),
+    map: cymbalTexture(print),
     roughnessMap: cymbalRoughnessTexture(),
     roughness: 1,
     metalness: 1,

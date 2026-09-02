@@ -299,16 +299,22 @@ export class App {
         this.overlay.hide();
         this.sticks.hide();
         break;
-      case 'hover':
-        this.hud.setTarget(KIT_BY_KEY[next.target].destination.label);
+      case 'hover': {
+        // an unadvertised destination lights up but stays nameless
+        const { destination } = KIT_BY_KEY[next.target];
+        this.hud.setTarget(destination.pending === true ? null : destination.label);
         break;
+      }
       case 'fill':
         // the tooltip stays while the fill plays
         break;
       case 'redirect':
         this.hud.setTarget(null);
         this.sticks.hide();
-        this.overlay.show(KIT_BY_KEY[next.target]);
+        // no destination card for a page that does not exist yet
+        if (KIT_BY_KEY[next.target].destination.pending !== true) {
+          this.overlay.show(KIT_BY_KEY[next.target]);
+        }
         break;
     }
   };
@@ -524,7 +530,10 @@ export class App {
       if (this.fsm.state.name === 'fill') this.startFill(after.fill);
     }
     if (this.fsm.state.name === 'fill' && this.audio.currentTime >= this.fillEndsAt) {
+      const { target } = this.fsm.state;
       this.fsm.fillDone();
+      // a pending destination goes straight back on stage, no card
+      if (KIT_BY_KEY[target].destination.pending === true) this.fsm.reset();
     }
     if (
       this.fsm.state.name !== 'fill' &&

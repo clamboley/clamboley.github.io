@@ -17,7 +17,7 @@ import {
   type Object3D,
   type Texture,
 } from 'three';
-import type { DrumSpec, DrumZone, Fill, KitElement, KitKey, ZoneSide } from '../kit.types.ts';
+import type { DrumSpec, DrumZone, Fill, KitElement, KitKey, Logo, ZoneSide } from '../kit.types.ts';
 import { cylinderBetween, cymbalGeometry, merge } from './geometry.ts';
 import {
   createKitMaterials,
@@ -278,23 +278,15 @@ export class DrumKit {
     const left = spec.zones.find((z) => z.side === 'left');
     const right = spec.zones.find((z) => z.side === 'right');
     const first = spec.zones[0];
+    const print = (key: KitKey): { logo: Logo; label: string } | null => {
+      const { logo, destination } = this.elements[key];
+      // a destination that does not exist yet stays unadvertised: plain head
+      return destination.pending === true ? null : { logo, label: destination.label };
+    };
     const map =
       left && right
-        ? splitHeadTexture(
-            {
-              logo: this.elements[left.key].logo,
-              label: this.elements[left.key].destination.label,
-            },
-            {
-              logo: this.elements[right.key].logo,
-              label: this.elements[right.key].destination.label,
-            },
-            0,
-          )
-        : drumHeadTexture(
-            this.elements[first?.key ?? 'snare'].logo,
-            this.elements[first?.key ?? 'snare'].destination.label,
-          );
+        ? splitHeadTexture(print(left.key), print(right.key), 0)
+        : drumHeadTexture(print(first?.key ?? 'snare'));
     const material = headMaterial(map, this.elements[first?.key ?? 'snare'].logo.color);
     material.emissiveMap = this.masks.whole; // present from the start: no recompile on hover
     return material;
@@ -526,7 +518,10 @@ export class DrumKit {
   ): Reactive[] {
     const { placement } = spec;
     const { logo, destination } = zone;
-    const material = cymbalMaterial(logo, destination.label, logo.color);
+    const material = cymbalMaterial(
+      destination.pending === true ? null : { logo, label: destination.label },
+      logo.color,
+    );
     group.add(this.shadowed(new Mesh(cymbalGeometry(placement.radius), material)));
     // felt, wing nut and the tilter sleeve on top of the stand
     const nut = merge([
@@ -563,7 +558,10 @@ export class DrumKit {
     const { placement } = spec;
     const { logo, destination } = zone;
     const r = placement.radius;
-    const material = cymbalMaterial(logo, destination.label, logo.color);
+    const material = cymbalMaterial(
+      destination.pending === true ? null : { logo, label: destination.label },
+      logo.color,
+    );
     group.add(this.shadowed(new Mesh(cymbalGeometry(r), material)));
     const bottom = new Mesh(cymbalGeometry(r * 0.98), material);
     bottom.rotation.x = Math.PI;

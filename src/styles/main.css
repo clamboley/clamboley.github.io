@@ -359,6 +359,12 @@ body.is-menu .identity {
 .site-nav a:focus-visible {
   color: var(--accent);
 }
+/* while nothing exists behind them, pending destinations stay off the lists */
+body.is-menu .site-nav li:has(a[data-pending]),
+body.is-fallback .site-nav li:has(a[data-pending]) {
+  display: none;
+}
+
 .site-nav a[data-pending] {
   color: #6f678f;
   cursor: default;

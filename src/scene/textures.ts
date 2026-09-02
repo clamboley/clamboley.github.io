@@ -59,7 +59,7 @@ function speckle(ctx: Ctx, size: number, count: number, alpha: number, seed: num
 }
 
 /** Coated batter head with the destination logo and label. */
-export function drumHeadTexture(logo: Logo, label: string): CanvasTexture {
+export function drumHeadTexture(print: { logo: Logo; label: string } | null): CanvasTexture {
   const size = 512;
   const [canvas, ctx] = createCanvas(size);
   const c = size / 2;
@@ -76,16 +76,18 @@ export function drumHeadTexture(logo: Logo, label: string): CanvasTexture {
   ctx.beginPath();
   ctx.arc(c, c, c * 0.93, 0, Math.PI * 2);
   ctx.stroke();
-  drawLogo(ctx, logo, c, c * 0.9, size * 0.2);
-  drawLabel(ctx, label, c, c * 1.55, size * 0.085, '#56503f');
+  if (print !== null) {
+    drawLogo(ctx, print.logo, c, c * 0.9, size * 0.2);
+    drawLabel(ctx, print.label, c, c * 1.55, size * 0.085, '#56503f');
+  }
   return colorTexture(canvas);
 }
 
 /** Lathed bronze cymbal, logo on the bell. */
 /** A head shared by two destinations: a logo on each half, a thin line between. */
 export function splitHeadTexture(
-  left: { logo: Logo; label: string },
-  right: { logo: Logo; label: string },
+  left: { logo: Logo; label: string } | null,
+  right: { logo: Logo; label: string } | null,
   /** Shifts logos and labels down the head (a kick seen over a snare shows its lower half). */
   drop = 0,
 ): CanvasTexture {
@@ -104,18 +106,24 @@ export function splitHeadTexture(
   ctx.beginPath();
   ctx.arc(c, c, c * 0.93, 0, Math.PI * 2);
   ctx.stroke();
-  // the dividing line, drawn like a seam in the coating
-  ctx.strokeStyle = 'rgba(70, 60, 45, 0.55)';
-  ctx.lineWidth = 5;
-  ctx.beginPath();
-  ctx.moveTo(c, c * 0.1);
-  ctx.lineTo(c, size - c * 0.1);
-  ctx.stroke();
+  if (left !== null || right !== null) {
+    // the dividing line, drawn like a seam in the coating
+    ctx.strokeStyle = 'rgba(70, 60, 45, 0.55)';
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(c, c * 0.1);
+    ctx.lineTo(c, size - c * 0.1);
+    ctx.stroke();
+  }
   const y = c * (0.92 + drop);
-  drawLogo(ctx, left.logo, c * 0.52, y, size * 0.15);
-  drawLabel(ctx, left.label, c * 0.52, y + c * 0.5, size * 0.07, '#56503f');
-  drawLogo(ctx, right.logo, c * 1.48, y, size * 0.15);
-  drawLabel(ctx, right.label, c * 1.48, y + c * 0.5, size * 0.07, '#56503f');
+  if (left !== null) {
+    drawLogo(ctx, left.logo, c * 0.52, y, size * 0.15);
+    drawLabel(ctx, left.label, c * 0.52, y + c * 0.5, size * 0.07, '#56503f');
+  }
+  if (right !== null) {
+    drawLogo(ctx, right.logo, c * 1.48, y, size * 0.15);
+    drawLabel(ctx, right.label, c * 1.48, y + c * 0.5, size * 0.07, '#56503f');
+  }
   return colorTexture(canvas);
 }
 
@@ -132,7 +140,7 @@ export function headMaskTexture(side: 'whole' | 'left' | 'right'): CanvasTexture
   return new CanvasTexture(canvas);
 }
 
-export function cymbalTexture(logo: Logo, label: string): CanvasTexture {
+export function cymbalTexture(print: { logo: Logo; label: string } | null): CanvasTexture {
   const size = 512;
   const [canvas, ctx] = createCanvas(size);
   const c = size / 2;
@@ -151,8 +159,10 @@ export function cymbalTexture(logo: Logo, label: string): CanvasTexture {
     ctx.arc(c, c, r, 0, Math.PI * 2);
     ctx.stroke();
   }
-  drawLogo(ctx, logo, c, c, size * 0.14);
-  drawLabel(ctx, label, c, c * 1.5, size * 0.075, 'rgba(60,40,10,.85)');
+  if (print !== null) {
+    drawLogo(ctx, print.logo, c, c, size * 0.14);
+    drawLabel(ctx, print.label, c, c * 1.5, size * 0.075, 'rgba(60,40,10,.85)');
+  }
   return colorTexture(canvas);
 }
 
