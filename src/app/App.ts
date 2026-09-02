@@ -25,6 +25,7 @@ import { withBase } from '../util/base.ts';
 import { mustQuery } from '../util/dom.ts';
 import type { Hud } from '../ui/Hud.ts';
 import { Menu } from '../ui/Menu.ts';
+import { EntryGate } from '../ui/EntryGate.ts';
 import type { RedirectOverlay } from '../ui/RedirectOverlay.ts';
 import { readMotionPrefs } from '../util/motion.ts';
 import type { QualityProfile } from '../util/quality.ts';
@@ -116,6 +117,7 @@ export class App {
   private readonly look: LookInput;
   private readonly keyboard: KeyboardInput;
   private readonly menu: Menu;
+  private readonly entry: EntryGate;
   private readonly governor: Governor;
   private readonly stats: HTMLElement | null;
   private statsTimer = 0;
@@ -129,7 +131,6 @@ export class App {
   readonly quality: QualityProfile;
 
   private pendingHits: ScheduledHit[] = [];
-  private fillAfterCount: { fill: Fill; at: number } | null = null;
   private fillEndsAt = 0;
   /** Audio time when the current count-in (sticks clicked in the air) ends. */
   private countEndsAt = 0;
@@ -181,7 +182,7 @@ export class App {
       (nx, ny) => {
         // the camera holds still under the list and on the redirect card; it may
         // still look around while a fill plays
-        if (this.menu.isOpen || this.fsm.state.name === 'redirect') return;
+        if (this.entry.isOpen || this.menu.isOpen || this.fsm.state.name === 'redirect') return;
         this.keyboard.release();
         this.pov.look(nx, ny);
       },
@@ -233,6 +234,13 @@ export class App {
     this.stats = wantStats ? createStats() : null;
 
     this.fsm.subscribe(this.onStateChange);
+
+    // the door: decoding starts right away, the button only has to resume
+    this.entry = new EntryGate(mustQuery(document.body, '.entry'), () => {
+      this.onFirstGesture();
+    });
+    this.audio.prepare();
+    this.preloadFillSamples();
   }
 
   /** The governor's verdict: render scale and crowd reach. */
@@ -273,9 +281,8 @@ export class App {
     const canvas = this.renderer.domElement;
     canvas.addEventListener('touchstart', this.onTouchStart, { passive: true });
     canvas.addEventListener('touchend', this.onTouchEnd, { passive: false });
-    // try right away: a browser that already trusts the site plays from the start,
-    // the others keep the ambience scheduled until the first gesture unlocks it
-    this.onFirstGesture();
+    // the sound and the stage both wait behind the entry veil
+    this.entry.show();
     this.frame(performance.now());
   }
 
@@ -289,6 +296,7 @@ export class App {
     this.look.dispose();
     this.keyboard.dispose();
     this.menu.dispose();
+    this.entry.dispose();
     this.renderer.dispose();
   }
 
@@ -321,6 +329,7 @@ export class App {
 
   /** Escape: the plain list of destinations over the scene, and back. */
   private toggleMenu(): void {
+    if (this.entry.isOpen) return;
     if (this.fsm.state.name === 'redirect') {
       this.returnToStage(); // Escape on the destination card: back to the drums
       return;
@@ -349,7 +358,6 @@ export class App {
   private readonly onFirstGesture = (): void => {
     this.audio.unlock(); // must come first: preloading needs the audio graph
     this.preloadFillSamples();
-    void this.audio.preload(withBase(site.countIn.sample)).catch(() => undefined);
     void this.audio
       .startAmbience(withBase(site.ambience.file), site.ambience.level)
       .catch((error: unknown) => {
@@ -378,7 +386,7 @@ export class App {
   };
 
   private readonly onClick = (): void => {
-    if (this.menu.isOpen) return;
+    if (this.entry.isOpen || this.menu.isOpen) return;
     const { state } = this.fsm;
     if (state.name === 'idle') {
       this.countIn();
@@ -396,66 +404,60 @@ export class App {
 
     void this.audio.whenRunning().then(() => {
       if (this.fsm.state.name !== 'fill') return;
-      if (fill.sample !== null && !this.audio.hasSample(fill.sample)) {
-        // the recording is still decoding (first click): count the fill in
-        // with the sticks, and hand over on the beat that follows
-        const start = this.audio.currentTime + 0.12;
-        const beat = 60 / 130;
-        const times = [0, 1, 2, 3].map((i) => start + i * beat);
-        this.audio.countIn(times, withBase(site.countIn.sample));
-        this.sticks.countIn(times, this.countFrame());
-        this.fillAfterCount = { fill, at: start + 4 * beat };
-        return;
-      }
       this.startFill(fill);
     });
   };
 
   /** Schedules a fill's audio, hits, kicks and stick strokes right now. */
   private startFill(fill: Fill): void {
-    {
-      const start = this.audio.playFill(fill, (key) => KIT_BY_KEY[key].voice);
-      this.pendingHits = fill.hits
-        .map((hit) => ({ at: start + hit.t, key: hit.key, velocity: hit.velocity }))
-        .sort((a, b) => a.at - b.at);
-      this.fillEndsAt = start + fillDuration(fill);
-      this.kit.scheduleKicks(
-        fill.hits.filter((hit) => hit.key === 'kick').map((hit) => start + hit.t),
-      );
-      this.audio.cheer(start + 0.75);
+    const start = this.audio.playFill(fill, (key) => KIT_BY_KEY[key].voice);
+    this.pendingHits = fill.hits
+      .map((hit) => ({ at: start + hit.t, key: hit.key, velocity: hit.velocity }))
+      .sort((a, b) => a.at - b.at);
+    this.fillEndsAt = start + fillDuration(fill);
+    this.kit.scheduleKicks(
+      fill.hits.filter((hit) => hit.key === 'kick').map((hit) => start + hit.t),
+    );
+    this.audio.cheer(start + 0.75);
 
-      const strikes: Strike[] = [];
-      for (const hit of fill.hits) {
-        if (hit.foot === true) continue; // pedal hi-hat: the foot plays it
-        const point = this.kit.strikePoint(hit.key, hit.bell === true ? 'bell' : 'head');
-        if (point)
-          strikes.push({
-            at: start + hit.t,
-            key: hit.key,
-            point,
-            ...(hit.hand === undefined ? {} : { hand: hit.hand }),
-            ...(hit.bell === true ? { bell: true } : {}),
-          });
-      }
-      this.sticks.play(strikes);
+    const strikes: Strike[] = [];
+    for (const hit of fill.hits) {
+      if (hit.foot === true) continue; // pedal hi-hat: the foot plays it
+      const point = this.kit.strikePoint(hit.key, hit.bell === true ? 'bell' : 'head');
+      if (point)
+        strikes.push({
+          at: start + hit.t,
+          key: hit.key,
+          point,
+          ...(hit.hand === undefined ? {} : { hand: hit.hand }),
+          ...(hit.bell === true ? { bell: true } : {}),
+        });
     }
+    this.sticks.play(strikes);
   }
 
-  /** Click on no target: four stick clicks, like counting a song in. */
-  /** Fetch and decode the fills' recordings once, on the first gesture. */
+  /** Fetch and decode every recording once, feeding the door's progress ring. */
   private preloadFillSamples(): void {
     if (this.fillSamplesRequested) return;
     this.fillSamplesRequested = true;
     const phoneFills = COMPACT_KIT.flatMap((spec) =>
       typeof spec.fill === 'object' ? [spec.fill] : [],
     );
+    const urls = new Set<string>([withBase(site.countIn.sample)]);
     for (const fill of [...KIT.map((element) => element.fill), ...phoneFills]) {
-      const { sample } = fill;
-      if (sample === null) continue;
-      void this.audio.preload(sample).catch((error: unknown) => {
-        console.warn(`Fill sample ${sample} unavailable, retrying on the next gesture`, error);
-        this.fillSamplesRequested = false; // a later gesture tries again
-      });
+      if (fill.sample !== null) urls.add(fill.sample);
+    }
+    let settled = 0;
+    for (const url of urls) {
+      void this.audio
+        .preload(url)
+        .catch((error: unknown) => {
+          console.warn(`Sample ${url} unavailable, will synthesize`, error);
+        })
+        .finally(() => {
+          settled += 1;
+          this.entry.setProgress(settled / urls.size);
+        });
     }
   }
 
@@ -524,11 +526,6 @@ export class App {
     const elapsed = this.timer.getElapsed();
 
     this.applyDueHits();
-    const after = this.fillAfterCount;
-    if (after !== null && this.audio.currentTime >= after.at - 0.1) {
-      this.fillAfterCount = null;
-      if (this.fsm.state.name === 'fill') this.startFill(after.fill);
-    }
     if (this.fsm.state.name === 'fill' && this.audio.currentTime >= this.fillEndsAt) {
       const { target } = this.fsm.state;
       this.fsm.fillDone();

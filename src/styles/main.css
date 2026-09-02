@@ -390,3 +390,92 @@ body.is-fallback .site-nav li:has(a[data-pending]) {
   border-radius: 3px;
   pointer-events: none;
 }
+
+/* --- entry gate: the veil and the one button that starts the sound --- */
+.entry {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  background: rgba(5, 4, 10, 0.55);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+  transition: opacity 0.5s ease;
+}
+.entry.is-leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+.entry-button {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  background: rgba(255, 214, 110, 0.1);
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+.entry-button:hover,
+.entry-button:focus-visible {
+  background: rgba(255, 214, 110, 0.2);
+  transform: scale(1.04);
+  outline: none;
+}
+.entry-ring {
+  position: absolute;
+  inset: -7px;
+  width: calc(100% + 14px);
+  height: calc(100% + 14px);
+  transform: rotate(-90deg);
+}
+.entry-ring-track {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.14);
+  stroke-width: 3;
+}
+.entry-ring-fill {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 3;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.3s ease;
+}
+.entry-logo {
+  width: 46px;
+  height: 46px;
+}
+.entry.is-waiting .entry-button {
+  animation: entry-pulse 1s ease-in-out infinite;
+}
+.entry-hint {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+@keyframes entry-pulse {
+  50% {
+    transform: scale(0.95);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .entry.is-waiting .entry-button {
+    animation: none;
+  }
+  .entry,
+  .entry-ring-fill,
+  .entry-button {
+    transition: none;
+  }
+}

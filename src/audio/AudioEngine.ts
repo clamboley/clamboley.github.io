@@ -36,18 +36,26 @@ export class AudioEngine {
     return this.graph?.ctx.currentTime ?? 0;
   }
 
+  /**
+   * Builds the audio graph without starting it: allowed before any gesture,
+   * and enough for fetching and decoding samples while the context sleeps.
+   */
+  prepare(): void {
+    if (this.graph) return;
+    const ctx = new AudioContext();
+    const compressor = ctx.createDynamicsCompressor();
+    const master = ctx.createGain();
+    master.gain.value = 0.85;
+    master.connect(compressor);
+    compressor.connect(ctx.destination);
+    this.graph = { ctx, master, synth: new Synth(ctx, master) };
+  }
+
   /** Must be called from a user gesture. Idempotent. */
   unlock(): void {
-    if (!this.graph) {
-      const ctx = new AudioContext();
-      const compressor = ctx.createDynamicsCompressor();
-      const master = ctx.createGain();
-      master.gain.value = 0.85;
-      master.connect(compressor);
-      compressor.connect(ctx.destination);
-      this.graph = { ctx, master, synth: new Synth(ctx, master) };
-    }
-    if (this.graph.ctx.state === 'suspended') void this.graph.ctx.resume();
+    this.prepare();
+    const graph = this.requireGraph();
+    if (graph.ctx.state === 'suspended') void graph.ctx.resume();
   }
 
   /**

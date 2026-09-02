@@ -47,6 +47,28 @@
       <div class="identity-tagline">{{site.tagline}}</div>
     </header>
 
+    <div class="entry" hidden>
+      <button
+        class="entry-button"
+        type="button"
+        aria-label="Activer le son et monter sur scène"
+      >
+        <svg class="entry-ring" viewBox="0 0 100 100" aria-hidden="true">
+          <circle class="entry-ring-track" cx="50" cy="50" r="46" />
+          <circle class="entry-ring-fill" cx="50" cy="50" r="46" />
+        </svg>
+        <svg class="entry-logo" viewBox="0 0 48 48" aria-hidden="true">
+          <g stroke="currentColor" stroke-width="3.4" stroke-linecap="round">
+            <line x1="13" y1="39" x2="34.4" y2="12.6" />
+            <line x1="35" y1="39" x2="13.6" y2="12.6" />
+          </g>
+          <circle cx="35.6" cy="11.1" r="2.7" fill="currentColor" />
+          <circle cx="12.4" cy="11.1" r="2.7" fill="currentColor" />
+        </svg>
+      </button>
+      <p class="entry-hint">Monter sur scène</p>
+    </div>
+
     <div id="hud" aria-hidden="true">
       <div class="crosshair"></div>
       <div class="tooltip">
@@ -55,7 +77,6 @@
       </div>
       <div class="hint">
         <span class="hint-text">Déplace la souris pour regarder autour de toi</span>
-        <div class="hint-sound">son activé au premier clic</div>
       </div>
     </div>
 
