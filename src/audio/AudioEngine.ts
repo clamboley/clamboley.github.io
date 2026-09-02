@@ -42,6 +42,11 @@ export class AudioEngine {
    */
   prepare(): void {
     if (this.graph) return;
+    // iOS mutes Web Audio on the speaker while the ring/silent switch is on
+    // silent — unless the page declares itself a playback session, the way
+    // music apps do (Audio Session API, Safari 17+; a no-op elsewhere)
+    const session = (navigator as { audioSession?: { type: string } }).audioSession;
+    if (session) session.type = 'playback';
     const ctx = new AudioContext();
     const compressor = ctx.createDynamicsCompressor();
     const master = ctx.createGain();
@@ -55,7 +60,9 @@ export class AudioEngine {
   unlock(): void {
     this.prepare();
     const graph = this.requireGraph();
-    if (graph.ctx.state === 'suspended') void graph.ctx.resume();
+    // 'suspended' before the first gesture, and iOS reports 'interrupted'
+    // after a route change (headphones unplugged): resume in both cases
+    if (graph.ctx.state !== 'running') void graph.ctx.resume();
   }
 
   /**
