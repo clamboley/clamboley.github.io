@@ -38,7 +38,6 @@ export class Governor {
   private sinceDecision = 0;
   private frames = 0;
   private goodChecks = 0;
-  private changes = 0;
 
   constructor(
     private readonly apply: (levels: GovernorLevels, rung: number) => void,
@@ -53,11 +52,6 @@ export class Governor {
 
   get currentRung(): number {
     return this.rung;
-  }
-
-  /** How many times the rung moved (each move reallocates the buffers). */
-  get changeCount(): number {
-    return this.changes;
   }
 
   /** Call once per rendered frame with the wall-clock delta. */
@@ -90,7 +84,6 @@ export class Governor {
     }
     if (next === this.rung) return;
     this.rung = next;
-    this.changes++;
     this.apply(this.levels, this.rung);
   }
 }

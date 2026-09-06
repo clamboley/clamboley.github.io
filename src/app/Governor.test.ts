@@ -5,11 +5,9 @@ describe('Governor', () => {
   it('climbs down the ladder while the frame rate is low, one rung per decision', () => {
     const applied: number[] = [];
     const governor = new Governor((_, rung) => applied.push(rung));
-    expect(governor.changeCount).toBe(0);
     for (let i = 0; i < 20; i++) governor.decide(20);
     expect(applied).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
     expect(governor.levels).toEqual(LADDER[LADDER.length - 1]);
-    expect(governor.changeCount).toBe(8);
   });
 
   it('gives up resolution before the front-row detail, and detail before the far crowd', () => {
