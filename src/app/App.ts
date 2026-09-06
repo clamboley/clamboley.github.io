@@ -123,6 +123,8 @@ export class App {
   private readonly stats: HTMLElement | null;
   private statsTimer = 0;
   private statsFrames = 0;
+  /** Resize-driven buffer rebuilds so far (governor moves have their own counter). */
+  private resizeCount = 0;
   /** Element aimed through the keyboard focus, overriding the crosshair. */
   private keyboardAim: KitKey | null = null;
   private readonly raycaster = new Raycaster();
@@ -138,6 +140,9 @@ export class App {
   private fillSamplesRequested = false;
   private frameHandle = 0;
   private tap: { x: number; y: number; at: number } | null = null;
+  /** Transient GPU context losses (three recovers on restore; canvas is black between). */
+  private ctxLost = 0;
+  private ctxRestored = 0;
 
   constructor({ container, hud, overlay, quality }: AppOptions) {
     this.hud = hud;
@@ -282,6 +287,8 @@ export class App {
     const canvas = this.renderer.domElement;
     canvas.addEventListener('touchstart', this.onTouchStart, { passive: true });
     canvas.addEventListener('touchend', this.onTouchEnd, { passive: false });
+    canvas.addEventListener('webglcontextlost', this.onCtxLost);
+    canvas.addEventListener('webglcontextrestored', this.onCtxRestored);
     // the sound and the stage both wait behind the entry veil
     this.entry.show();
     this.frame(performance.now());
@@ -294,6 +301,8 @@ export class App {
     window.removeEventListener('click', this.onClick);
     this.renderer.domElement.removeEventListener('touchstart', this.onTouchStart);
     this.renderer.domElement.removeEventListener('touchend', this.onTouchEnd);
+    this.renderer.domElement.removeEventListener('webglcontextlost', this.onCtxLost);
+    this.renderer.domElement.removeEventListener('webglcontextrestored', this.onCtxRestored);
     this.look.dispose();
     this.keyboard.dispose();
     this.menu.dispose();
@@ -364,6 +373,15 @@ export class App {
       .catch((error: unknown) => {
         console.warn('Crowd ambience unavailable', error);
       });
+  };
+
+  /** Listeners only: three.js already owns the loss/restore behaviour. */
+  private readonly onCtxLost = (): void => {
+    this.ctxLost++;
+  };
+
+  private readonly onCtxRestored = (): void => {
+    this.ctxRestored++;
   };
 
   private readonly onTouchStart = (event: TouchEvent): void => {
@@ -510,10 +528,21 @@ export class App {
     if (this.fsm.acceptsInput) this.fsm.aim(null);
   }
 
+  /** Last size the buffers were built for: mobile chrome toggles (url bar) fire
+   * resize storms, and every rebuild reallocates all HDR buffers. */
+  private lastSize: { w: number; h: number; ratio: number } | null = null;
+
   private readonly resize = (): void => {
     const { innerWidth, innerHeight } = window;
     const layout = layoutFor(innerWidth, innerHeight);
     if (layout !== this.layout) this.installKit(layout);
+    const ratio = this.renderer.getPixelRatio();
+    const last = this.lastSize;
+    if (last !== null && last.w === innerWidth && last.h === innerHeight && last.ratio === ratio) {
+      return; // same drawing size: spare the buffers a pointless rebuild
+    }
+    this.lastSize = { w: innerWidth, h: innerHeight, ratio };
+    this.resizeCount++;
     this.renderer.setSize(innerWidth, innerHeight);
     this.post.setSize(innerWidth, innerHeight);
     this.pov.resize(innerWidth / innerHeight);
@@ -565,7 +594,7 @@ export class App {
     if (this.statsTimer < 0.5 || !this.stats) return;
     const { renderScale, detail, crowdReach } = this.governor.levels;
     const fps = Math.round(this.statsFrames / this.statsTimer);
-    this.stats.textContent = `${String(fps)} fps · ${this.quality.tier} · rendu ×${renderScale.toFixed(2)} (dpr ${this.renderer.getPixelRatio().toFixed(2)}) · détail ${detail ? 'on' : 'off'} · foule ${String(Math.round(crowdReach * 100))} %`;
+    this.stats.textContent = `${String(fps)} fps · ${this.quality.tier} · rendu ×${renderScale.toFixed(2)} (dpr ${this.renderer.getPixelRatio().toFixed(2)}) · détail ${detail ? 'on' : 'off'} · foule ${String(Math.round(crowdReach * 100))} % · rsz ${String(this.resizeCount)} · gov ${String(this.governor.changeCount)} · ctx ${String(this.ctxLost)}/${String(this.ctxRestored)}`;
     this.statsTimer = 0;
     this.statsFrames = 0;
   }
