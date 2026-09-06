@@ -89,6 +89,8 @@ export class DrumKit {
   constructor(
     specs: readonly DrumSpec[],
     private readonly elements: Readonly<Record<KitKey, KitElement>>,
+    /** Cymbal anisotropy; 0 on drivers where the anisotropic BRDF goes NaN. */
+    private readonly cymbalAnisotropy = 0.35,
   ) {
     for (const spec of specs) this.build(spec);
     this.addTomMounts(specs);
@@ -521,6 +523,7 @@ export class DrumKit {
     const material = cymbalMaterial(
       destination.pending === true ? null : { logo, label: destination.label },
       logo.color,
+      this.cymbalAnisotropy,
     );
     group.add(this.shadowed(new Mesh(cymbalGeometry(placement.radius), material)));
     // felt, wing nut and the tilter sleeve on top of the stand
@@ -561,6 +564,7 @@ export class DrumKit {
     const material = cymbalMaterial(
       destination.pending === true ? null : { logo, label: destination.label },
       logo.color,
+      this.cymbalAnisotropy,
     );
     group.add(this.shadowed(new Mesh(cymbalGeometry(r), material)));
     const bottom = new Mesh(cymbalGeometry(r * 0.98), material);

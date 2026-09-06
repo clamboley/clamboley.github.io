@@ -160,13 +160,19 @@ export class App {
     this.scene.environmentIntensity = 0.45;
     this.pov = new PovCamera(motion);
     this.layout = layoutFor(window.innerWidth, window.innerHeight);
-    this.kit = new DrumKit(this.layout === 'compact' ? COMPACT_KIT : FULL_KIT, KIT_BY_KEY);
     this.pov.setRanges(this.layout === 'compact' ? COMPACT_RANGES : FULL_RANGES);
     this.crowd = new Crowd(quality.people, assets.crowdIndividualDepth, motion, {
       pitLights: quality.pitLights,
       pitDepth: quality.pitDepth,
     });
     const rich = quality.tier === 'high';
+    // low tier skips the anisotropic BRDF: its unguarded a2/v2 division goes
+    // inf on some drivers, poisoning the bloom chain into black flashes
+    this.kit = new DrumKit(
+      this.layout === 'compact' ? COMPACT_KIT : FULL_KIT,
+      KIT_BY_KEY,
+      rich ? 0.35 : 0,
+    );
     this.lights = new StageLights(motion, this.rig.rig, quality.shadowMapSize, rich ? 1 : 2);
     this.sky = new Sky(this.renderer.getPixelRatio(), quality.stars, 0.28 * motion.scale, rich);
     this.scene.add(
@@ -523,7 +529,11 @@ export class App {
     this.scene.remove(this.kit.root);
     this.kit.dispose();
     this.layout = layout;
-    this.kit = new DrumKit(layout === 'compact' ? COMPACT_KIT : FULL_KIT, KIT_BY_KEY);
+    this.kit = new DrumKit(
+      layout === 'compact' ? COMPACT_KIT : FULL_KIT,
+      KIT_BY_KEY,
+      this.quality.tier === 'high' ? 0.35 : 0,
+    );
     this.scene.add(this.kit.root);
     this.pov.setRanges(layout === 'compact' ? COMPACT_RANGES : FULL_RANGES);
     if (this.fsm.acceptsInput) this.fsm.aim(null);

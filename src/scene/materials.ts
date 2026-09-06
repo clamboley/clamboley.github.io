@@ -60,13 +60,15 @@ export function headMaterial(map: Texture, emissive: string): MeshStandardMateri
 export function cymbalMaterial(
   print: { logo: Logo; label: string } | null,
   emissive: string,
+  /** Lathed highlight stretch; 0 also switches off three's anisotropic BRDF. */
+  anisotropy = 0.35,
 ): MeshPhysicalMaterial {
   return new MeshPhysicalMaterial({
     map: cymbalTexture(print),
     roughnessMap: cymbalRoughnessTexture(),
     roughness: 1,
     metalness: 1,
-    anisotropy: 0.35,
+    anisotropy,
     emissive: new Color(emissive),
     emissiveIntensity: 0,
   });
