@@ -166,8 +166,9 @@ export class App {
       pitLights: quality.pitLights,
       pitDepth: quality.pitDepth,
     });
-    this.lights = new StageLights(motion, this.rig.rig, quality.shadowMapSize);
-    this.sky = new Sky(this.renderer.getPixelRatio(), quality.stars, 0.28 * motion.scale);
+    const rich = quality.tier === 'high';
+    this.lights = new StageLights(motion, this.rig.rig, quality.shadowMapSize, rich ? 1 : 2);
+    this.sky = new Sky(this.renderer.getPixelRatio(), quality.stars, 0.28 * motion.scale, rich);
     this.scene.add(
       createStage(),
       this.kit.root,

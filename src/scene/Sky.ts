@@ -14,7 +14,8 @@ import { seededRandom } from '../util/random.ts';
 
 const DOME_RADIUS = 300;
 
-const noiseGlsl = /* glsl */ `
+function noiseGlsl(octaves: number): string {
+  return /* glsl */ `
   float hash(vec3 p) {
     p = fract(p * 0.3183099 + vec3(0.1, 0.2, 0.3));
     p *= 17.0;
@@ -31,10 +32,11 @@ const noiseGlsl = /* glsl */ `
   }
   float fbm(vec3 p) {
     float v = 0.0, a = 0.5;
-    for (int i = 0; i < 5; i++) { v += a * vnoise(p); p = p * 2.03 + 1.7; a *= 0.5; }
+    for (int i = 0; i < ${octaves}; i++) { v += a * vnoise(p); p = p * 2.03 + 1.7; a *= 0.5; }
     return v;
   }
 `;
+}
 
 const domeVertex = /* glsl */ `
   varying vec3 vDir;
@@ -44,14 +46,15 @@ const domeVertex = /* glsl */ `
   }
 `;
 
-const domeFragment = /* glsl */ `
+function domeFragment(octaves: number, dust: boolean): string {
+  return /* glsl */ `
   varying vec3 vDir;
   uniform vec3 zenith;
   uniform vec3 horizon;
   uniform vec3 glowWarm;
   uniform vec3 glowCold;
   uniform vec3 milky;
-  ${noiseGlsl}
+  ${noiseGlsl(octaves)}
   void main() {
     vec3 d = normalize(vDir);
     float h = d.y;
@@ -65,13 +68,14 @@ const domeFragment = /* glsl */ `
     vec3 bandNormal = normalize(vec3(0.42, 0.55, 0.72));
     float band = exp(-pow(abs(dot(d, bandNormal)) / 0.17, 2.0));
     float cloud = fbm(d * 7.0);
-    float dust = fbm(d * 18.0 + 5.0);
-    col += milky * band * (0.25 + 0.9 * cloud) * (0.7 + 0.6 * dust) * smoothstep(-0.02, 0.2, h);
+    ${dust ? 'float grain = fbm(d * 18.0 + 5.0);' : 'float grain = 0.0;'}
+    col += milky * band * (0.25 + 0.9 * cloud) * (0.7 + 0.6 * grain) * smoothstep(-0.02, 0.2, h);
     // faint nebulosity so the dark is not flat
     col += vec3(0.035, 0.02, 0.06) * fbm(d * 3.0 + 11.0) * smoothstep(0.0, 0.4, h);
     gl_FragColor = vec4(col, 1.0);
   }
 `;
+}
 
 const starsVertex = /* glsl */ `
   attribute float size;
@@ -111,12 +115,14 @@ export class Sky {
   private readonly stars: ShaderMaterial;
 
   /** `twinkleAmp` is the star flicker depth (0 = still), scaled down under reduced motion. */
-  constructor(pixelRatio: number, starCount: number, twinkleAmp: number) {
+  constructor(pixelRatio: number, starCount: number, twinkleAmp: number, rich = true) {
     const dome = new Mesh(
       new SphereGeometry(DOME_RADIUS, 48, 24),
       new ShaderMaterial({
         vertexShader: domeVertex,
-        fragmentShader: domeFragment,
+        // low tier: fewer noise octaves, no grain pass — the horizon view is
+        // where tile GPUs choke, and the band reads the same from afar
+        fragmentShader: domeFragment(rich ? 5 : 3, rich),
         uniforms: {
           zenith: { value: new Color(0x05060f) },
           horizon: { value: new Color(0x1a1230) },

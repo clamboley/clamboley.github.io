@@ -38,6 +38,8 @@ export class StageLights {
     private readonly motion: MotionPrefs,
     rig: Rig,
     shadowMapSize = 1024,
+    /** Keep one rig lamp in N for its beam (low tier halves the overdraw). */
+    private readonly beamStride = 1,
   ) {
     this.root.add(new HemisphereLight(0x2a2440, 0x05050a, 0.18));
 
@@ -79,6 +81,9 @@ export class StageLights {
   private addRigBeams(rig: Rig): void {
     const random = seededRandom(31);
     rig.lamps.forEach((lamp, i) => {
+      // low tier keeps one lamp in two: stacked additive cones are the worst
+      // overdraw of the horizon view, where weak tile GPUs already struggle
+      if (i % this.beamStride !== 0) return;
       const color = RIG_PALETTE[i % RIG_PALETTE.length] ?? 0xffffff;
       const from = new Vector3(lamp.x, lamp.y, lamp.z);
       const to = new Vector3(lamp.target.x, lamp.target.y, lamp.target.z);
