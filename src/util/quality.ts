@@ -46,7 +46,9 @@ export const PROFILES: Readonly<Record<QualityTier, QualityProfile>> = {
   },
   low: {
     tier: 'low',
-    pixelRatioMax: 1.25,
+    // capped low on purpose: every buffer (canvas, HDR chain, bloom mips)
+    // scales with it, and iOS purges oversized WebGL surfaces in flashes
+    pixelRatioMax: 1.0,
     people: 90,
     pitLights: 3000,
     stars: 2500,
