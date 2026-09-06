@@ -49,6 +49,11 @@ describe('quality tiers', () => {
     expect(resolveQuality(desktop, 'nonsense')).toBe(PROFILES.high);
   });
 
+  it('anti-aliases both tiers: SMAA is the only AA the post chain allows', () => {
+    expect(PROFILES.low.antialias).toBe(true);
+    expect(PROFILES.high.antialias).toBe(true);
+  });
+
   it('keeps the low tier strictly lighter than the high one', () => {
     for (const k of [
       'pixelRatioMax',

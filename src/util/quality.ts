@@ -52,7 +52,9 @@ export const PROFILES: Readonly<Record<QualityTier, QualityProfile>> = {
     stars: 2500,
     pitDepth: 24,
     shadowMapSize: 512,
-    antialias: false,
+    // the only anti-aliasing the post-processing chain allows: cheap where
+    // the governor already shrank the picture, decisive on phone edges
+    antialias: true,
     detailDistance: 1,
   },
 };

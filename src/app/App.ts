@@ -42,7 +42,8 @@ function layoutFor(width: number, height: number): KitLayout {
   if (forced === 'full' || forced === 'compact') return forced;
   return height > width ? 'compact' : 'full';
 }
-const BUDGET_KEY = 'vitrine:budget';
+/** Bumped when the rendering tiers change, so parked devices re-measure. */
+const BUDGET_KEY = 'vitrine:budget:2';
 
 /** Where the adaptive budget ended up last time on this device. */
 function readStoredRung(): number {
