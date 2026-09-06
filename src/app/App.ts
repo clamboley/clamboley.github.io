@@ -593,8 +593,9 @@ export class App {
     this.statsFrames++;
     if (this.statsTimer < 0.5 || !this.stats) return;
     const { renderScale, detail, crowdReach } = this.governor.levels;
+    const { geometries, textures } = this.renderer.info.memory;
     const fps = Math.round(this.statsFrames / this.statsTimer);
-    this.stats.textContent = `${String(fps)} fps · ${this.quality.tier} · rendu ×${renderScale.toFixed(2)} (dpr ${this.renderer.getPixelRatio().toFixed(2)}) · détail ${detail ? 'on' : 'off'} · foule ${String(Math.round(crowdReach * 100))} % · rsz ${String(this.resizeCount)} · gov ${String(this.governor.changeCount)} · ctx ${String(this.ctxLost)}/${String(this.ctxRestored)}`;
+    this.stats.textContent = `${String(fps)} fps · ${this.quality.tier} · rendu ×${renderScale.toFixed(2)} (dpr ${this.renderer.getPixelRatio().toFixed(2)}) · détail ${detail ? 'on' : 'off'} · foule ${String(Math.round(crowdReach * 100))} % · rsz ${String(this.resizeCount)} · gov ${String(this.governor.changeCount)} · ctx ${String(this.ctxLost)}/${String(this.ctxRestored)} · geo ${String(geometries)}/${String(textures)}`;
     this.statsTimer = 0;
     this.statsFrames = 0;
   }
