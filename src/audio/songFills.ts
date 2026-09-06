@@ -10,7 +10,7 @@ export const SONG_FILLS: Readonly<Record<KitKey, Fill>> = {
   // (MIDI says 160 bpm, the audio export runs at 90: converted with --tempo 90)
   // sticking from Corentin, encoded with --sticking
   kick: {
-    sample: 'samples/fills/grosse-caisse.wav',
+    sample: 'samples/fills/grosse-caisse.mp3',
     hits: [
       { t: 0, key: 'kick', velocity: 0.44 },
       { t: 0.111, key: 'kick', velocity: 0.44 },
@@ -43,7 +43,7 @@ export const SONG_FILLS: Readonly<Record<KitKey, Fill>> = {
   // Mes apps — "Smells Like Teen Spirit", from Corentin's MuseScore score
   // (MIDI says 126 bpm, the audio export runs at 113: converted with --tempo 113)
   snare: {
-    sample: 'samples/fills/snare.wav',
+    sample: 'samples/fills/snare.mp3',
     hits: [
       { t: 0, key: 'snare', velocity: 0.63 },
       { t: 0.014, key: 'snare', velocity: 0.63 },
@@ -71,7 +71,7 @@ export const SONG_FILLS: Readonly<Record<KitKey, Fill>> = {
   // (MIDI says 150 bpm, the audio export runs at 96: converted with --tempo 96)
   // sticking from Corentin, encoded with --sticking
   tom1: {
-    sample: 'samples/fills/high-tom.wav',
+    sample: 'samples/fills/high-tom.mp3',
     hits: [
       { t: 0, key: 'tom1', velocity: 0.63, hand: 'right' },
       { t: 0.156, key: 'tom1', velocity: 0.63, hand: 'right' },
@@ -96,7 +96,7 @@ export const SONG_FILLS: Readonly<Record<KitKey, Fill>> = {
   // LinkedIn — a mid-tom fill, from Corentin's MuseScore score
   // (150 bpm, --tempo 150; sticking from Corentin, --sticking RLLRLLRLRLRLR; two floor voices → one floor)
   tom2: {
-    sample: 'samples/fills/mid-tom.wav',
+    sample: 'samples/fills/mid-tom.mp3',
     hits: [
       { t: 0, key: 'tom1', velocity: 0.76, hand: 'right' },
       { t: 0.1, key: 'snare', velocity: 0.3, hand: 'left' },
@@ -121,7 +121,7 @@ export const SONG_FILLS: Readonly<Record<KitKey, Fill>> = {
   // Blog — a floor-tom fill, from Corentin's MuseScore score
   // (MIDI says 57 bpm, the score is at 252: --tempo 252; sticking from Corentin, --sticking BRLRL)
   floor: {
-    sample: 'samples/fills/floor-tom.wav',
+    sample: 'samples/fills/floor-tom.mp3',
     hits: [
       { t: 0, key: 'floor', velocity: 0.63, hand: 'right' },
       { t: 0, key: 'hihat', velocity: 0.63, hand: 'left' },
@@ -138,7 +138,7 @@ export const SONG_FILLS: Readonly<Record<KitKey, Fill>> = {
   // CV — the "Rosanna" half-time shuffle, from Corentin's MuseScore score
   // (MIDI says 95 bpm, the audio export runs at 151: converted with --tempo 151)
   hihat: {
-    sample: 'samples/fills/hi-hat.wav',
+    sample: 'samples/fills/hi-hat.mp3',
     hits: [
       { t: 0, key: 'hihat', velocity: 0.63 },
       { t: 0, key: 'kick', velocity: 0.63 },
@@ -181,7 +181,7 @@ export const SONG_FILLS: Readonly<Record<KitKey, Fill>> = {
   // sticking from Corentin, encoded with --sticking
   // (his GM 48 is the high tom here: --map 48:tom1)
   crash: {
-    sample: 'samples/fills/crash.wav',
+    sample: 'samples/fills/crash.mp3',
     hits: [
       { t: 0, key: 'snare', velocity: 0.63, hand: 'right' },
       { t: 0.349, key: 'tom1', velocity: 0.63, hand: 'right' },
@@ -195,7 +195,7 @@ export const SONG_FILLS: Readonly<Record<KitKey, Fill>> = {
   // Musique — "Take Five", from Corentin's MuseScore score
   // (MIDI says 90 bpm, the audio export runs at 149: converted with --tempo 149)
   ride: {
-    sample: 'samples/fills/ride.wav',
+    sample: 'samples/fills/ride.mp3',
     hits: [
       { t: 0, key: 'kick', velocity: 0.63 },
       { t: 0, key: 'ride', velocity: 0.63 },
@@ -239,7 +239,7 @@ export const SONG_FILLS: Readonly<Record<KitKey, Fill>> = {
  * ride's bell, struck with the stick's shoulder rather than the tip.
  */
 export const PHONE_KICK_FILL: Fill = {
-  sample: 'samples/fills/grosse-caisse-minimaliste.wav',
+  sample: 'samples/fills/grosse-caisse-minimaliste.mp3',
   hits: [
     { t: 0, key: 'hihat', velocity: 0.63, hand: 'right' },
     { t: 0, key: 'kick', velocity: 0.63 },
@@ -277,7 +277,7 @@ export const PHONE_KICK_FILL: Fill = {
  * ride's bell, struck with the stick's shoulder.
  */
 export const PHONE_HIHAT_FILL: Fill = {
-  sample: 'samples/fills/hi-hat-minimaliste.wav',
+  sample: 'samples/fills/hi-hat-minimaliste.mp3',
   hits: [
     { t: 0, key: 'hihat', velocity: 0.63 },
     { t: 0, key: 'kick', velocity: 0.63 },

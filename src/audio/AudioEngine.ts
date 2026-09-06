@@ -119,6 +119,8 @@ export class AudioEngine {
       source.buffer = sample;
       source.connect(graph.master);
       source.start(start);
+      // no scheduled stop: the recording rings out naturally (a crash struck
+      // last must decay on its own; the redirect timing lives in fillDuration)
     } else {
       if (fill.sample !== null) console.warn(`Sample ${fill.sample} not loaded, synthesizing`);
       for (const hit of fill.hits) graph.synth.play(voiceOf(hit.key), start + hit.t, hit.velocity);

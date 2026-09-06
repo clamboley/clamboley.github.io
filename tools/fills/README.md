@@ -22,8 +22,8 @@ Pour chaque fill, deux exports depuis la même partition :
 1. **MIDI** (`.mid`) → `tools/fills/scores/<element>.mid` — le timing des
    baguettes.
 2. **Audio** (`.wav`, banque Muse Sounds de préférence) →
-   `public/samples/fills/<element>.wav` — devient LE son du fill (le synthé ne
-   sert plus que de secours si le fichier manque).
+   `tools/fills/audio/<element>.wav` — la source, encodée en MP3 ensuite
+   (le synthé ne sert plus que de secours si le fichier manque).
 
 `<element>` ∈ `kick`, `snare`, `tom1` (aigu), `tom2` (médium), `floor`,
 `hihat`, `crash`, `ride`.
@@ -31,7 +31,8 @@ Pour chaque fill, deux exports depuis la même partition :
 ## Convertir (Claude)
 
 ```bash
-node tools/fills/midi2fill.mjs tools/fills/scores/floor.mid samples/fills/floor.wav
+node tools/fills/midi2fill.mjs tools/fills/scores/floor.mid samples/fills/floor.mp3
+./tools/fills/encode.sh   # WAV → MP3 (LAME V2) dans public/samples/fills/
 ```
 
 imprime le littéral `Fill` (ajouter `--tempo <bpm>` si l'export audio a été

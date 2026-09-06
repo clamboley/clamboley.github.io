@@ -2,7 +2,7 @@
 /**
  * Converts a MuseScore drumset MIDI export into a Fill literal for
  * src/audio/songFills.ts. Usage:
- *   node tools/fills/midi2fill.mjs tools/fills/scores/floor.mid [samples/fills/floor.wav] [--tempo 150] [--sticking RLRR...] [--map 48:tom1]
+ *   node tools/fills/midi2fill.mjs tools/fills/scores/floor.mid [samples/fills/floor.mp3] [--tempo 150] [--sticking RLRR...] [--map 48:tom1]
  * Prints the TS snippet, plus warnings (unmapped notes, duration).
  */
 import { readFileSync } from 'node:fs';
@@ -34,7 +34,7 @@ const GM = new Map([
 
 const path = process.argv[2];
 if (!path) {
-  console.error('usage: midi2fill.mjs <file.mid> [sample-path.wav]');
+  console.error('usage: midi2fill.mjs <file.mid> [sample-path.mp3]');
   process.exit(1);
 }
 const args = process.argv.slice(3);

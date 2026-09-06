@@ -13,7 +13,7 @@ describe('SONG_FILLS', () => {
 
   it.each(KEYS)('%s: hits are ordered, in range, and land on the target', (key) => {
     const fill = SONG_FILLS[key];
-    if (fill.sample !== null) expect(fill.sample).toMatch(/^samples\//);
+    if (fill.sample !== null) expect(fill.sample).toMatch(/^samples\/fills\/.*\.mp3$/);
     const times = fill.hits.map((hit) => hit.t);
     expect(times).toEqual([...times].sort((a, b) => a - b));
     for (const hit of fill.hits) {
