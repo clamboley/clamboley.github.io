@@ -2,8 +2,8 @@
 export const site = {
   lang: 'fr',
   name: 'Corentin Lamboley',
-  tagline: 'ingénieur · batteur',
-  title: 'Corentin Lamboley — ingénieur · batteur',
+  tagline: 'AI Research Engineer – Foundation Models',
+  title: 'Corentin Lamboley — AI Research Engineer – Foundation Models',
   description:
     'Assieds-toi derrière la batterie : chaque fût et chaque cymbale mène vers une facette de mon travail.',
   /** Canonical URL of the deployed site (Open Graph). */
