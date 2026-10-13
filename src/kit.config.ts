@@ -49,8 +49,8 @@ export const KIT: readonly KitElement[] = [
   {
     key: 'floor',
     kind: 'drum',
-    destination: { label: 'Blog', url: '/blog', pending: true },
-    logo: { glyph: 'B', color: '#3aa06a' },
+    destination: { label: 'Deep Notes', url: 'https://clamboley.github.io/deep-notes/' },
+    logo: { glyph: 'DN', color: '#2f62d6' },
     placement: { position: [0.57, 0.78, -0.46], radius: 0.21, depth: 0.34, tilt: 0.04 },
     voice: { type: 'tom', pitch: 112 },
     fill: SONG_FILLS.floor,

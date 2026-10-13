@@ -2,7 +2,7 @@
 
 Site vitrine dont la page d'accueil est une batterie en vue première personne, sur scène :
 la souris déplace le regard, chaque fût ou cymbale mène vers une destination (à propos,
-apps, GitHub, LinkedIn, blog, CV, contact, musique). Au clic, un fill est joué, puis on est
+apps, GitHub, LinkedIn, Deep Notes, CV, contact, musique). Au clic, un fill est joué, puis on est
 redirigé. Ni bouton, ni menu.
 
 Le brief complet est dans [`docs/BRIEF-homepage-batterie.md`](docs/BRIEF-homepage-batterie.md) ;

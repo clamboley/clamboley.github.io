@@ -406,6 +406,9 @@ body.is-fallback .site-nav li:has(a[data-pending]) {
   -webkit-backdrop-filter: blur(7px);
   transition: opacity 0.5s ease;
 }
+.entry[hidden] {
+  display: none;
+}
 .entry.is-leaving {
   opacity: 0;
   pointer-events: none;
